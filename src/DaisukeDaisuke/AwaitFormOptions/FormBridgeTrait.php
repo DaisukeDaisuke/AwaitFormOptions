@@ -21,7 +21,6 @@ trait FormBridgeTrait{
 	 * @throws AwaitFormException
 	 */
 	public function request(array $value) : \Generator{
-
 		Utils::validateArrayValueType($value, static function(FormControl|Button|array $value){});
 		if(!isset($this->bridge)){
 			throw new \BadFunctionCallException("bridge is not set");
@@ -31,10 +30,11 @@ trait FormBridgeTrait{
 		}catch(InvalidArgumentException $awaitFormException){
 			/**
 			 * @see AwaitFormOptions::sendMenuAsync()
+			 * @see AwaitFormOptions::sendFormAsync()
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace();
-			throw new AwaitFromOptionsInvalidValueException($awaitFormException->getMessage()." on ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0, $awaitFormException);
+			throw new AwaitFromOptionsInvalidValueException($awaitFormException->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0, $awaitFormException);
 		}
 	}
 }

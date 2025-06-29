@@ -42,7 +42,7 @@ class RequestResponseBridge{
 
 	/**
 	 * 要求を全て取得する。要求が未完の場合はそれまで待つ
-	 * 返すのは普通のジェネレータ
+	 * もしrequestが中途半端だった場合デットロックする
 	 *
 	 * @return \Generator<int, mixed>
 	 */
@@ -70,8 +70,8 @@ class RequestResponseBridge{
 	}
 
 	public function rejectsAll(\Throwable $throwable) : void{
-		foreach($this->rejects as $reject){
-			($reject)($throwable);
+		foreach($this->rejects as $id => $reject){
+			$this->reject($id, $throwable);
 		}
 	}
 
@@ -86,9 +86,7 @@ class RequestResponseBridge{
 	 * @return void
 	 */
 	public static function all(array $array) : void{
-		Await::f2c(function() use ($array) : \Generator{
-			yield from Await::all($array);
-		});
+		Await::g2c(Await::all($array));
 	}
 
 	public function count() : int{
