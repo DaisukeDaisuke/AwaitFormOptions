@@ -52,19 +52,30 @@ class AwaitFormOptions{
 		$index = [];
 		$options = [];
 		foreach(yield from $bridge->getAllExpected() as $id => $array){
-			$index[$id] = [$counter, count($array)];
+			$keys = [];
 			$counter += count($array);
-			foreach($array as $item){
+			foreach($array as $key => $item){
+				if(is_array($item)){
+					[$item, $key] = $item;
+				}
+				if(!is_scalar($key)||is_object($key)){
+					//HACK: Making backtraces useful
+					$bridge->reject($id, new \InvalidArgumentException("key must be scalar"));
+					return [];
+				}
+				$keys[] = $key;
 				$options[] = $item;
 			}
+			$index[$id] = [$counter, count($array), $keys];
 		}
 
 		try{
 			$menu = AwaitForm::form($title, $options);
 			$result = yield from $menu->request($player);
 
-			foreach($index as $id => [$start, $length]){
-				$bridge->solve($id, array_slice($result, $start, $length));
+			foreach ($index as $id => [$start, $length, $keys]) {
+				$values = array_slice($result, $start, $length);
+				$bridge->solve($id, array_combine($keys, $values));
 			}
 			return $result;
 		}catch(AwaitFormException $awaitFormException){
@@ -128,10 +139,8 @@ class AwaitFormOptions{
 					[$item, $key] = $item;
 				}
 				if(!$item instanceof Button){
-					throw new \InvalidArgumentException("Button is required");
-				}
-				if(!is_int($key)&&!is_string($key)){
-					throw new \InvalidArgumentException("key must be int or string");
+					//HACK: Making backtraces useful
+					$bridge->reject($id, new \InvalidArgumentException("Button is required"));
 				}
 				$flatButtons[$counter++] = $item;
 				$keys[$count++] = $key;

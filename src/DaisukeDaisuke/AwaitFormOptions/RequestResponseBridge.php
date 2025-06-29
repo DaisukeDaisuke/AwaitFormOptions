@@ -75,6 +75,12 @@ class RequestResponseBridge{
 		}
 	}
 
+	public function reject(int $id, \Throwable $throwable) : void{
+		if(isset($this->rejects[$id])){
+			($this->rejects[$id])($throwable);
+		}
+	}
+
 	/**
 	 * @param array<\Generator<mixed>> $array
 	 * @return void

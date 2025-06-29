@@ -6,6 +6,7 @@ use pocketmine\utils\Utils;
 use cosmicpe\awaitform\FormControl;
 use cosmicpe\awaitform\Button;
 use cosmicpe\awaitform\AwaitFormException;
+use InvalidArgumentException;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
@@ -20,11 +21,20 @@ trait FormBridgeTrait{
 	 * @throws AwaitFormException
 	 */
 	public function request(array $value) : \Generator{
+
 		Utils::validateArrayValueType($value, static function(FormControl|Button|array $value){});
 		if(!isset($this->bridge)){
 			throw new \BadFunctionCallException("bridge is not set");
 		}
-		return yield from $this->bridge->request($value);
+		try{
+			return yield from $this->bridge->request($value);
+		}catch(InvalidArgumentException $awaitFormException){
+			/**
+			 * @see AwaitFormOptions::sendMenuAsync()
+			 */
+			//HACK: Making backtraces useful
+			$dbg = debug_backtrace();
+			throw new AwaitFromOptionsInvalidValueException($awaitFormException->getMessage()." on ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0, $awaitFormException);
+		}
 	}
-
 }
