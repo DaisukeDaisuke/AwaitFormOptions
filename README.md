@@ -170,8 +170,7 @@ Each instance is handled independently.
 
 ## `neverRejects` and `throwExceptionInCaller`
 
-If neverRejects is false, the child generator must handle the exception  
-If it is true, exceptions will never be raised in the child generator
+If neverRejects is false, the child generator must handle the exception
 
 If throwExceptionInCaller is true, the parent generator will receive an AwaitFormException  
 
