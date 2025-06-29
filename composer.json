@@ -1,0 +1,18 @@
+{
+    "name": "daisukedaisuke/awaitformoptions",
+    "type": "library",
+    "require": {
+        "cosmicpe/awaitform": "^0.0.1",
+        "sof3/await-generator": "^3.6"
+    },
+    "autoload": {
+        "classmap": ["src"]
+    },
+    "license": "GPL-3.0",
+    "extra": {
+        "virion": {
+            "spec": "3.1",
+            "namespace-root": "DaisukeDaisuke\\AwaitFormOptions"
+        }
+    }
+}
