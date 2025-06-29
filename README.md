@@ -177,7 +177,7 @@ In addition, sendForm and sendMenu can also be called completely standalone, wit
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
+    $player = $event->getPlayer();
     AwaitFormOptions::sendForm(
         player: $player,
         title: "test",
