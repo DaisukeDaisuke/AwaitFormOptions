@@ -62,7 +62,7 @@ class RequestResponseBridge{
 	 */
 	public function solve(int $id, mixed $value) : void{
 		if(!isset($this->pendingSend[$id])){
-			throw new \RuntimeException("未登録のIDです: $id");
+			throw new \LogicException("未登録のIDです: $id");
 		}
 		($this->pendingSend[$id])($value);
 

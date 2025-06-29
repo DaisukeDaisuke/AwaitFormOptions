@@ -27,14 +27,14 @@ trait FormBridgeTrait{
 		}
 		try{
 			return yield from $this->bridge->request($value);
-		}catch(InvalidArgumentException $awaitFormException){
+		}catch(InvalidArgumentException $exception){
 			/**
 			 * @see AwaitFormOptions::sendMenuAsync()
 			 * @see AwaitFormOptions::sendFormAsync()
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace();
-			throw new AwaitFromOptionsInvalidValueException($awaitFormException->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0, $awaitFormException);
+			throw new AwaitFromOptionsInvalidValueException($exception->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0, $exception);
 		}
 	}
 }
