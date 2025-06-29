@@ -62,7 +62,7 @@ public function a(PlayerItemUseEvent $event): void {
 			options: [
 				new HPFormOptions($player),
 			],
-			neverRejects: false, // If true, the awaitFormOption propagates the AwaitFormException to the generator.
+			neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
 			throwExceptionInCaller: false, // If true, awaitFormOption will throw an exception on the caller
 		);
 	} catch (FormValidationException) {
@@ -306,7 +306,7 @@ public function a(PlayerItemUseEvent $event): void {
 				options: [
 					new HPFormOptions($player),
 				],
-				neverRejects: true, // If true, the awaitFormOption propagates the AwaitFormException to the generator.
+				neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
 			    throwExceptionInCaller: true, // If true, awaitFormOption will throw an exception on the caller
 			);
 			$player->sendMessage("Completed! Total: " . count($results));
