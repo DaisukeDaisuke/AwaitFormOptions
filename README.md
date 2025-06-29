@@ -62,8 +62,8 @@ public function a(PlayerItemUseEvent $event): void {
 			options: [
 				new HPFormOptions($player),
 			],
-			neverRejects: false, // If true, parent handles AwaitFormException instead of the child
-			throwExceptionInCaller: false,
+			neverRejects: false, // If true, the awaitFormOption propagates the AwaitFormException to the generator.
+			throwExceptionInCaller: false, // If true, awaitFormOption will throw an exception on the caller
 		);
 	} catch (FormValidationException) {
 		// Form failed validation
