@@ -75,6 +75,8 @@ public function a(PlayerItemUseEvent $event): void {
 
 ## Example Option Class
 
+Each option will yield from `$this->request($form);` and wait for the response. No more losing context!
+
 ```php
 <?php
 
@@ -93,7 +95,7 @@ class HPFormOptions extends FormOptions {
 			$form = [
 				FormControl::input("Max HP:", "20", (string) $this->player->getMaxHealth()),
 			];
-			[$maxHP] = yield from $this->request($form);
+			[$maxHP] = yield from $this->request($form); // awaiting response
 			$this->player->setMaxHealth((int) $maxHP);
 			$this->player->sendMessage("Max HP: {$maxHP}");
 		} catch (AwaitFormException $e) {
@@ -106,7 +108,7 @@ class HPFormOptions extends FormOptions {
 			$form = [
 				FormControl::input("Current HP:", "20", (string) $this->player->getHealth()),
 			];
-			[$currentHP] = yield from $this->request($form);
+			[$currentHP] = yield from $this->request($form); // awaiting response
 			$this->player->setHealth((float) $currentHP);
 			$this->player->sendMessage("Current HP: {$currentHP}");
 		} catch (AwaitFormException $e) {
