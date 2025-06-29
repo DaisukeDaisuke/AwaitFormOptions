@@ -38,9 +38,12 @@ public function a(PlayerItemUseEvent $event): void {
 
 But when handling multiple related form steps in one screen, things get messy fast.   
 **Too many responsibilities are packed into one place.**    
+<details align="center">
+	<summary>See demo</summary>
 
 https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8
 
+</details>
 ---
 
 ## Solution: AwaitFormOptions
