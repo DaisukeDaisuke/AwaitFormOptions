@@ -3,7 +3,8 @@ build-by-default: true
 branches:
 - main
 projects:
-  type: "library"
   AwaitFormOptions:
     path: ""
+    model: virion
+    type: library
 ...
