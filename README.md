@@ -168,12 +168,38 @@ Each instance is handled independently.
 
 ---
 
-## Standalone and `neverRejects`
+## `neverRejects` and `throwExceptionInCaller`
 
 If neverRejects is false, the child generator must handle the exception  
-If it is true, exceptions will never be raised in the child generator  
+If it is true, exceptions will never be raised in the child generator
 
-In addition, sendForm and sendMenu can also be called completely standalone, without receiving exceptions  
+If throwExceptionInCaller is true, the parent generator will receive an AwaitFormException  
+
+```php
+public function a(PlayerItemUseEvent $event) : void{
+    $player = $event->getPlayer();
+
+    Await::f2c(function() use ($player){
+        try{
+            yield from AwaitFormOptions::sendFormAsync(
+                player: $player,
+                title: "test",
+                options: [
+                    new HPFormOptions($player),
+                ],
+                neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
+                throwExceptionInCaller: true, // If true, awaitFormOption will throw an exception on the caller
+            );
+        }catch(FormValidationException|AwaitFormException){
+            // Form failed validation
+        }
+    });
+}
+```
+
+## Standalone
+
+sendForm and sendMenu can also be called completely standalone, without receiving exceptions  
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
