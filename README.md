@@ -197,6 +197,8 @@ public function a(PlayerItemUseEvent $event) : void{
 }
 ```
 
+---
+
 ## Standalone
 
 sendForm and sendMenu can also be called completely standalone, without receiving exceptions  
