@@ -20,7 +20,6 @@ class AwaitFormOptions{
 	 * @param string $title
 	 * @param array<FormOptions> $options
 	 * @param bool $neverRejects
-	 * @param bool $throwExceptionInCaller
 	 * @return void
 	 * @throws FormValidationException|AwaitFormException
 	 */
@@ -100,7 +99,6 @@ class AwaitFormOptions{
 	 * @param string $content
 	 * @param array<MenuOptions> $buttons
 	 * @param bool $neverRejects
-	 * @param bool $throwExceptionInCaller
 	 * @return void
 	 * @throws FormValidationException|AwaitFormException
 	 */
