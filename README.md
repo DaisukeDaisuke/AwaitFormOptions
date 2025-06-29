@@ -165,8 +165,8 @@ Each instance is handled independently.
 
 ## `neverRejects`
 
-If `neverRejects` is `true`, exceptions like `AwaitFormException` will be thrown to the parent caller.    
-If `false`, each option class must handle its own form cancellation.  
+If neverRejects is false, the child generator must handle the exception.
+If it is true, exceptions will never be raised in the child generator
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
