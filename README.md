@@ -44,6 +44,8 @@ But when handling multiple related form steps in one screen, things get messy fa
 https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8
 
 </details>
+
+
 ---
 
 ## Solution: AwaitFormOptions
@@ -60,7 +62,8 @@ public function a(PlayerItemUseEvent $event): void {
 			options: [
 				new HPFormOptions($player),
 			],
-			neverRejects: false // If true, parent handles AwaitFormException instead of the child
+			neverRejects: false, // If true, parent handles AwaitFormException instead of the child
+			throwExceptionInCaller: false,
 		);
 	} catch (FormValidationException) {
 		// Form failed validation
@@ -144,7 +147,8 @@ public function a(PlayerItemUseEvent $event): void {
 				new HPFormOptions($player),
 				new HPFormOptions($player),
 			],
-			neverRejects: false
+			neverRejects: false,
+			throwExceptionInCaller: true,
 		);
 	} catch (FormValidationException) {
 	}
@@ -172,7 +176,8 @@ public function a(PlayerItemUseEvent $event): void {
 			options: [
 				new HPFormOptions($player),
 			],
-			neverRejects: true
+			neverRejects: true,
+			throwExceptionInCaller: true,
 		);
 	} catch (AwaitFormException | FormValidationException) {
 		// Cancellation or validation handled here
@@ -198,7 +203,8 @@ public function a(PlayerItemUseEvent $event): void {
 			buttons: [
 				new NameMenuOptions($player, ["f", "a"]),
 			],
-			neverRejects: false
+			neverRejects: false,
+			throwExceptionInCaller: true,
 		);
 	} catch (FormValidationException) {
 	}
@@ -269,7 +275,8 @@ public function a(PlayerItemUseEvent $event): void {
 				new NameMenuOptions($player, ["g", "h"]),
 				new NameMenuOptions($player, ["i", "j"]),
 			],
-			neverRejects: false
+			neverRejects: false,
+			throwExceptionInCaller: true,
 		);
 	} catch (FormValidationException) {
 	}
@@ -279,6 +286,34 @@ public function a(PlayerItemUseEvent $event): void {
 ![Image](https://github.com/user-attachments/assets/81872ca7-1e99-4919-9e5e-8c5ee3bf3045)
 
 ---
+
+
+## Async Support
+
+Just like AwaitForm, **AwaitFormOptions supports async-style usage**.  
+Simply use the `Async` suffix on the method, and the parent function will wait for completion!
+
+```php
+public function a(PlayerItemUseEvent $event): void {
+	$player = $event->getPlayer();
+	Await::f2c(function() use ($player) {
+		try {
+			$results = yield from AwaitFormOptions::sendFormAsync(
+				player: $player,
+				title: "test",
+				options: [
+					new HPFormOptions($player),
+				],
+				neverRejects: false, // If true, AwaitFormException is handled by the parent
+				throwExceptionInCaller: true
+			);
+			$player->sendMessage("Completed! Total: " . count($results));
+		} catch (FormValidationException | AwaitFormException) {
+			// Form was cancelled or failed validation
+		}
+	});
+}
+```
 
 ## Summary
 
