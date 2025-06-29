@@ -165,8 +165,8 @@ Each instance is handled independently.
 
 ## `neverRejects`
 
-If neverRejects is false, the child generator must handle the exception.
-If it is true, exceptions will never be raised in the child generator
+If neverRejects is false, the child generator must handle the exception.  
+If it is true, exceptions will never be raised in the child generator  
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
