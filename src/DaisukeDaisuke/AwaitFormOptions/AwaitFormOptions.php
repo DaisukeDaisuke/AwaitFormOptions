@@ -53,7 +53,6 @@ class AwaitFormOptions{
 		$options = [];
 		foreach(yield from $bridge->getAllExpected() as $id => $array){
 			$keys = [];
-			$counter += count($array);
 			foreach($array as $key => $item){
 				if(is_array($item)){
 					[$item, $key] = $item;
@@ -67,6 +66,7 @@ class AwaitFormOptions{
 				$options[] = $item;
 			}
 			$index[$id] = [$counter, count($array), $keys];
+			$counter += count($array);
 		}
 
 		try{
