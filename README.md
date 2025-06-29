@@ -179,7 +179,7 @@ public function a(PlayerItemUseEvent $event): void {
 				new HPFormOptions($player),
 			],
 			neverRejects: true,
-			throwExceptionInCaller: true,
+			throwExceptionInCaller: false,
 		);
 	} catch (AwaitFormException | FormValidationException) {
 		// Cancellation or validation handled here
@@ -206,7 +206,7 @@ public function a(PlayerItemUseEvent $event): void {
 				new NameMenuOptions($player, ["f", "a"]),
 			],
 			neverRejects: false,
-			throwExceptionInCaller: true,
+			throwExceptionInCaller: false,
 		);
 	} catch (FormValidationException) {
 	}
@@ -278,7 +278,7 @@ public function a(PlayerItemUseEvent $event): void {
 				new NameMenuOptions($player, ["i", "j"]),
 			],
 			neverRejects: false,
-			throwExceptionInCaller: true,
+			throwExceptionInCaller: false,
 		);
 	} catch (FormValidationException) {
 	}
@@ -306,8 +306,8 @@ public function a(PlayerItemUseEvent $event): void {
 				options: [
 					new HPFormOptions($player),
 				],
-				neverRejects: false, // If true, AwaitFormException is handled by the parent
-				throwExceptionInCaller: true
+				neverRejects: true, // If true, the awaitFormOption propagates the AwaitFormException to the generator.
+			    throwExceptionInCaller: true, // If true, awaitFormOption will throw an exception on the caller
 			);
 			$player->sendMessage("Completed! Total: " . count($results));
 		} catch (FormValidationException | AwaitFormException) {
