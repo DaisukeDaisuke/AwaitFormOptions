@@ -21,11 +21,16 @@ class AwaitFormOptions{
 	 * @param array<FormOptions> $options
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
-	 * @throws FormValidationException|AwaitFormException
 	 * @return void
+	 * @throws FormValidationException|AwaitFormException
 	 */
-	public static function sendForm(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : void{
-		Await::g2c(self::sendFormAsync($player, $title, $options, $neverRejects, $throwExceptionInCaller));
+	public static function sendForm(Player $player, string $title, array $options, bool $neverRejects = false) : void{
+		Await::f2c(function() use ($neverRejects, $options, $title, $player){
+			try{
+				yield from self::sendFormAsync($player, $title, $options, $neverRejects, false);
+			}catch(FormValidationException|AwaitFormException){
+			}
+		});
 	}
 
 	/**
@@ -34,8 +39,8 @@ class AwaitFormOptions{
 	 * @param array<FormOptions> $options await fun
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
-	 * @throws FormValidationException|AwaitFormException
 	 * @return \Generator
+	 * @throws FormValidationException|AwaitFormException
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -73,7 +78,7 @@ class AwaitFormOptions{
 			$menu = AwaitForm::form($title, $options);
 			$result = yield from $menu->request($player);
 
-			foreach ($index as $id => [$start, $length, $keys]) {
+			foreach($index as $id => [$start, $length, $keys]){
 				$values = array_slice($result, $start, $length);
 				$bridge->solve($id, array_combine($keys, $values));
 			}
@@ -96,11 +101,16 @@ class AwaitFormOptions{
 	 * @param array<MenuOptions> $buttons
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
-	 * @throws FormValidationException|AwaitFormException
 	 * @return void
+	 * @throws FormValidationException|AwaitFormException
 	 */
-	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : void{
-		Await::g2c(self::sendMenuAsync($player, $title, $content, $buttons, $neverRejects, $throwExceptionInCaller));
+	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false) : void{
+		Await::f2c(function() use ($neverRejects, $content, $buttons, $title, $player){
+			try{
+				yield from self::sendMenuAsync($player, $title, $content, $buttons, $neverRejects, false);
+			}catch(FormValidationException|AwaitFormException){
+			}
+		});
 	}
 
 	/**
@@ -110,8 +120,8 @@ class AwaitFormOptions{
 	 * @param array<MenuOptions> $buttons
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
-	 * @throws FormValidationException|AwaitFormException
 	 * @return \Generator<mixed>
+	 * @throws FormValidationException|AwaitFormException
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();

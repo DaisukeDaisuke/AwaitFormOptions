@@ -53,22 +53,25 @@ https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8
 Split your form logic into reusable, testable option classes:  
 
 ```php
-public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
-	try {
-		AwaitFormOptions::sendForm(
-			player: $player,
-			title: "test",
-			options: [
-				new HPFormOptions($player),
-			],
-			neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
-			throwExceptionInCaller: false, // If true, awaitFormOption will throw an exception on the caller
-		);
-	} catch (FormValidationException) {
-		// Form failed validation
+public function a(PlayerItemUseEvent $event) : void{
+		$player = $event->getPlayer();
+
+		Await::f2c(function() use ($player){
+			try{
+				yield from AwaitFormOptions::sendFormAsync(
+					player: $player,
+					title: "test",
+					options: [
+						new HPFormOptions($player),
+					],
+					neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
+					throwExceptionInCaller: false, // If true, awaitFormOption will throw an exception on the caller
+				);
+			}catch(FormValidationException){
+				// Form failed validation
+			}
+		});
 	}
-}
 ```
 
 ---
@@ -135,26 +138,26 @@ Yes, option classes are reusable!
 Try passing the same class multiple times:  
 
 ```php
-public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
-	try {
-		AwaitFormOptions::sendForm(
-			player: $player,
-			title: "test",
-			options: [
-				new HPFormOptions($player),
-				new HPFormOptions($player),
-				new HPFormOptions($player),
-				new HPFormOptions($player),
-				new HPFormOptions($player),
-				new HPFormOptions($player),
-			],
-			neverRejects: false,
-			throwExceptionInCaller: true,
-		);
-	} catch (FormValidationException) {
+		Await::f2c(function () use ($player) {
+			try {
+				yield from AwaitFormOptions::sendFormAsync(
+					player: $player,
+					title: "test",
+					options: [
+						new HPFormOptions($player),
+						new HPFormOptions($player),
+						new HPFormOptions($player),
+						new HPFormOptions($player),
+						new HPFormOptions($player),
+						new HPFormOptions($player),
+					],
+					neverRejects: false,
+					throwExceptionInCaller: true,
+				);
+			} catch (FormValidationException|AwaitFormException) {
+			}
+		});
 	}
-}
 ```
 
 ![Image](https://github.com/user-attachments/assets/29ac3350-7368-4e00-aac8-caadbfabd75a)
@@ -163,27 +166,24 @@ Each instance is handled independently.
 
 ---
 
-## `neverRejects`
+## Standalone and `neverRejects`
 
-If neverRejects is false, the child generator must handle the exception.  
+If neverRejects is false, the child generator must handle the exception  
 If it is true, exceptions will never be raised in the child generator  
+
+In addition, sendForm and sendMenu can also be called completely standalone, without receiving exceptions  
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
 	$player = $event->getPlayer();
-	try {
-		AwaitFormOptions::sendForm(
-			player: $player,
-			title: "test",
-			options: [
-				new HPFormOptions($player),
-			],
-			neverRejects: true,
-			throwExceptionInCaller: false,
-		);
-	} catch (AwaitFormException | FormValidationException) {
-		// Cancellation or validation handled here
-	}
+    AwaitFormOptions::sendForm(
+        player: $player,
+        title: "test",
+        options: [
+            new HPFormOptions($player),
+        ],
+        neverRejects: true,
+    );
 }
 ```
 
@@ -195,22 +195,25 @@ AwaitFormOptions also supports `menu` interactions.
 Unselected menu options are discarded and not executed.  
 
 ```php
-public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
-	try {
-		AwaitFormOptions::sendMenu(
-			player: $player,
-			title: "test",
-			content: "a",
-			buttons: [
-				new NameMenuOptions($player, ["f", "a"]),
-			],
-			neverRejects: false,
-			throwExceptionInCaller: false,
-		);
-	} catch (FormValidationException) {
+	public function a(PlayerItemUseEvent $event): void {
+		$player = $event->getPlayer();
+		Await::f2c(function() use ($player): \Generator{
+			try{
+				yield from AwaitFormOptions::sendMenuAsync(
+					player: $player,
+					title: "test",
+					content: "a",
+					buttons: [
+						new NameMenuOptions($player, ["f", "a"]),
+					],
+					neverRejects: false,
+					throwExceptionInCaller: false,
+				);
+			}catch(FormValidationException){
+
+			}
+		});
 	}
-}
 ```
 
 ---
@@ -263,59 +266,32 @@ class NameMenuOptions extends MenuOptions {
 Just like form options, menu options can be reused as well:  
 
 ```php
-public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
-	try {
-		AwaitFormOptions::sendMenu(
-			player: $player,
-			title: "test",
-			content: "a",
-			buttons: [
-				new NameMenuOptions($player, ["a", "b"]),
-				new NameMenuOptions($player, ["c", "d"]),
-				new NameMenuOptions($player, ["e", "f"]),
-				new NameMenuOptions($player, ["g", "h"]),
-				new NameMenuOptions($player, ["i", "j"]),
-			],
-			neverRejects: false,
-			throwExceptionInCaller: false,
-		);
-	} catch (FormValidationException) {
+	public function a(PlayerItemUseEvent $event): void {
+		$player = $event->getPlayer();
+		Await::f2c(function () use ($player) : \Generator{
+			try {
+				yield from AwaitFormOptions::sendMenuAsync(
+					player: $player,
+					title: "test",
+					content: "a",
+					buttons: [
+						new NameMenuOptions($player, ["a", "b"]),
+						new NameMenuOptions($player, ["c", "d"]),
+						new NameMenuOptions($player, ["e", "f"]),
+						new NameMenuOptions($player, ["g", "h"]),
+						new NameMenuOptions($player, ["i", "j"]),
+					],
+					neverRejects: false,
+				);
+			} catch (FormValidationException) {
+			}
+		});
 	}
-}
 ```
 
 ![Image](https://github.com/user-attachments/assets/81872ca7-1e99-4919-9e5e-8c5ee3bf3045)
 
 ---
-
-
-## Async Support
-
-Just like AwaitForm, **AwaitFormOptions supports async-style usage**.  
-Simply use the `Async` suffix on the method, and the parent function will wait for completion!
-
-```php
-public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
-	Await::f2c(function() use ($player) {
-		try {
-			$results = yield from AwaitFormOptions::sendFormAsync(
-				player: $player,
-				title: "test",
-				options: [
-					new HPFormOptions($player),
-				],
-				neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
-			    throwExceptionInCaller: true, // If true, awaitFormOption will throw an exception on the caller
-			);
-			$player->sendMessage("Completed! Total: " . count($results));
-		} catch (FormValidationException | AwaitFormException) {
-			// Form was cancelled or failed validation
-		}
-	});
-}
-```
 
 ## Summary
 
