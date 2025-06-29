@@ -39,7 +39,7 @@ public function a(PlayerItemUseEvent $event): void {
 But when handling multiple related form steps in one screen, things get messy fast.   
 **Too many responsibilities are packed into one place.**    
 
-https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8　　 
+https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8
 
 ---
 
@@ -116,6 +116,8 @@ class HPFormOptions extends FormOptions {
 	}
 }
 ```
+
+![Image](https://github.com/user-attachments/assets/59789bc9-438f-485a-8ca9-625841ce0c66)
 
 ---
 
