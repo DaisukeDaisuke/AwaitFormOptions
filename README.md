@@ -682,35 +682,37 @@ With AwaitFormOptions, this can be done cleanly by combining input validation an
 ![Image](https://github.com/user-attachments/assets/8e735c4f-c674-4e4e-8cde-79cbb8ab378f)
 
 ```php
-public function onUse(PlayerItemUseEvent $event) : void{
-    $player = $event->getPlayer();
-    if(!$player->isSneaking()){
-        return;
-    }
-    Await::f2c(function() use ($player){
-        while(true){
-            try{
-                [$typed] = yield from AwaitFormOptions::sendFormAsync(
-                    player: $player,
-                    title: "Confirmation",
-                    options: [new ConfirmInputForm()],
-                    neverRejects: true,
-                    throwExceptionInCaller: true
-                );
-                if(strtolower(trim($typed)) === "yes"){
-                    $player->sendToastNotification("Confirmed", "Thanks for typing!");
-                    break;
-                }
+	public function onUse(PlayerItemUseEvent $event) : void{
+		$player = $event->getPlayer();
+		if(!$player->isSneaking()){
+			return;
+		}
+		Await::f2c(function() use ($player){
+			while(true){
+				try{
+					$result = yield from AwaitFormOptions::sendFormAsync(
+						player: $player,
+						title: "Confirmation",
+						options: ["output" => new ConfirmInputForm()],
+						neverRejects: true,
+						throwExceptionInCaller: true
+					);
+					//generator returns
+					$typed = $result["output"][0];
+					if(strtolower(trim($typed)) === "yes"){
+						$player->sendToastNotification("Confirmed", "Thanks for typing!");
+						break;
+					}
 
-            }catch(AwaitFormException $exception){
-                if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
-                    break;
-                }
-            }
-            $player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
-        }
-    });
-}
+				}catch(AwaitFormException $exception){
+					if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
+						break;
+					}
+				}
+				$player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
+			}
+		});
+	}
 ```
 
 ### 🧪 Option Class: ConfirmInputForm
