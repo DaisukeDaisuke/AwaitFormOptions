@@ -400,20 +400,16 @@ use cosmicpe\awaitform\Button;
 use pocketmine\entity\Entity;
 use cosmicpe\awaitform\AwaitFormException;
 
-class EntityNameMenuOptions extends MenuOptions {
+class SimpleButton extends MenuOptions {
 	public function __construct(private Player $player, private array $entities) {}
 
 	public function chooseEntity(): \Generator {
 		try {
-			$buttons = [];
-
-			foreach ($this->entities as $entity) {
 				// Display name, attach Entity instance
-				$buttons[] = [Button::simple($entity->getName()), $entity];
-			}
+				$buttons[] =
 
 			/** @var Entity $selected */
-			$selected = yield from $this->request($buttons);
+			$selected = yield from $this->request([Button::simple($entity->getName()), $entity];);
 
 			$this->player->sendMessage("You chose: " . $selected->getName());
 		} catch (AwaitFormException) {
@@ -424,6 +420,170 @@ class EntityNameMenuOptions extends MenuOptions {
 	public function getOptions(): array {
 		return [$this->chooseEntity()];
 	}
+}
+```
+
+---
+
+## Generator Return Values Are Captured
+Each generator that you define in your FormOptions or MenuOptions class can return a value using the return statement. When the form is submitted, all return values from each generator are automatically collected into an array and returned from AwaitFormOptions::sendFormAsync() or sendMenuAsync().
+
+This allows you to treat each form step as a small function that produces a result, just like any other callable.
+
+## Menu Example
+Here, the selected entity object is returned directly from the generator:
+
+```php
+public function onUse(PlayerItemUseEvent $event): void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player) {
+        try {
+            $selected = yield from AwaitFormOptions::sendMenuAsync(
+                player: $player,
+                title: "Food Assistance",
+                content: "Please select an option",
+                buttons: [
+                    new SimpleButton("test1", 0),
+                    new SimpleButton("test2", 2),
+                ],
+                neverRejects: true,
+                throwExceptionInCaller: false
+            );
+            var_dump($selected);
+        } catch (FormValidationException) {
+            // The form was cancelled or failed
+        }
+    });
+}
+```
+
+### SimpleButton
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\AwaitFormException;
+
+class SimpleButton extends MenuOptions{
+	public function __construct(private string $name, private int $id){
+	}
+
+	public function choose(int $offset) : \Generator{
+		try{
+			yield from $this->request(
+				[Button::simple($this->name), 0]
+			);
+			return $this->id + $offset;
+		}catch(AwaitFormException){
+			// Closed
+		}
+	}
+
+	public function getOptions() : array{
+		return [
+			$this->choose(0),
+			$this->choose(1),
+		];
+	}
+}
+```
+
+### result
+Any of the following
+```
+int(0)
+int(1)
+int(2)
+int(3)
+NULL
+```
+
+
+---
+
+## Form Example
+Forms can retrieve the return value of a generator in the same way, note that in this case it maps to the keys of the option array.
+
+```php
+public function onUse(PlayerItemUseEvent $event): void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player) {
+        try {
+            $selected = yield from AwaitFormOptions::sendFormAsync(
+                player: $player,
+                title: "test",
+                options: [
+                    "input1" => new SimpleInput("test1", "test", "test", 0),
+                    "input2" => new SimpleInput("test2", "test2", "test2", 0),
+                ],
+                neverRejects: true,
+                throwExceptionInCaller: false
+            );
+            var_dump($selected);
+        } catch (FormValidationException) {
+            // The form was cancelled or failed
+        }
+    });
+}
+```
+
+### SimpleInput.php
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\FormOptions;
+use cosmicpe\awaitform\FormControl;
+
+class SimpleInput extends FormOptions{
+	public function __construct(private string $text, private string $default, private string $placeholder, private int $id){
+	}
+
+	public function input(int $offset) : \Generator{
+		$output = yield from $this->request([FormControl::input($this->text, $this->default, $this->placeholder), $this->id + $offset]);
+		return $output[array_key_first($output)];
+	}
+
+	public function getOptions() : array{
+		return [
+			$this->input(0),
+			$this->input(1),
+		];
+	}
+}
+
+```
+
+### result
+
+```
+array(2) {
+  ["input1"]=>
+  array(2) {
+    [0]=>
+    string(4) "test"
+    [1]=>
+    string(4) "test"
+  }
+  ["input2"]=>
+  array(2) {
+    [0]=>
+    string(5) "test2"
+    [1]=>
+    string(5) "test2"
+  }
 }
 ```
 

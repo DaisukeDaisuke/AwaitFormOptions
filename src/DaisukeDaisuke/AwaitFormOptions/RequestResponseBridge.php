@@ -4,6 +4,7 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 
 use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Await;
+use SOFe\AwaitGenerator\Traverser;
 
 class RequestResponseBridge{
 
@@ -22,6 +23,11 @@ class RequestResponseBridge{
 	 * @var array<\Closure>
 	 */
 	private array $rejects = [];
+
+	/**
+	 * @var array<int, array>
+	 */
+	private array $returns = [];
 
 	/**
 	 * クライアントから値を送り、応答を待つ
@@ -83,14 +89,36 @@ class RequestResponseBridge{
 	}
 
 	/**
+	 * @param int $id
 	 * @param array<\Generator<mixed>> $array
 	 * @return void
 	 */
-	public function all(array $array) : void{
-		Await::g2c(Await::all($array));
+	public function all(int $id, array $array) : void{
+		Await::f2c(function() use ($id, $array){
+			$return = yield from Await::All($array);
+			$this->returns[$id] = $return;
+		});
+	}
+
+	/**
+	 * @param int $id
+	 * @param int $key
+	 * @param array<\Generator<mixed>> $array
+	 * @return void
+	 * @throws \Throwable
+	 */
+	public function race(int $id, array $array) : void{
+		Await::f2c(function() use ($id, $array){
+			[$which, $return] = yield from Await::safeRace($array);
+			$this->returns[$id + $which] = $return;
+		});
 	}
 
 	public function count() : int{
 		return count($this->pendingRequest);
+	}
+
+	public function getReturns() : array{
+		return $this->returns;
 	}
 }

@@ -21,6 +21,17 @@ trait FormBridgeTrait{
 	 * @throws AwaitFormException
 	 */
 	public function request(array $value) : \Generator{
+		$missed = false;
+		foreach($value as $v){
+			if(!is_array($v) && count($value) === 2){
+				$missed = true;
+			}
+			break;
+		}
+		if($missed){
+			$value = [$value];
+		}
+
 		Utils::validateArrayValueType($value, static function(FormControl|Button|array $value){});
 		if(!isset($this->bridge)){
 			throw new \BadFunctionCallException("bridge is not set");

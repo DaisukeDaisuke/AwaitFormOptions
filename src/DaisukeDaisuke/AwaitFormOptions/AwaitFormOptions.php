@@ -46,9 +46,12 @@ class AwaitFormOptions{
 		Utils::validateArrayValueType($options, static function(FormOptions $value){
 		});
 
+		$options_keys = array_keys($options);
+		$counter = 0;
 		foreach($options as $option){
 			$option->setBridge($bridge);
-			$bridge->all($option->getOptions());
+			$array = $option->getOptions();
+			$bridge->all($counter++, $array);
 		}
 
 
@@ -82,7 +85,7 @@ class AwaitFormOptions{
 				$values = array_slice($result, $start, $length);
 				$bridge->solve($id, array_combine($keys, $values));
 			}
-			return $result;
+			return array_combine($options_keys, $bridge->getReturns());
 		}catch(AwaitFormException $awaitFormException){
 			if(!$neverRejects){
 				$bridge->rejectsAll($awaitFormException);
@@ -91,7 +94,7 @@ class AwaitFormOptions{
 				throw $awaitFormException;
 			}
 		}
-		return [];
+		return array_combine($options_keys, $bridge->getReturns());
 	}
 
 	/**
@@ -120,7 +123,7 @@ class AwaitFormOptions{
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
 	 * @return \Generator<mixed>
-	 * @throws FormValidationException|AwaitFormException
+	 * @throws FormValidationException|AwaitFormException|\Throwable
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -129,10 +132,13 @@ class AwaitFormOptions{
 		Utils::validateArrayValueType($buttons, static function(MenuOptions $value) : void{
 		});
 
+		$counter = 0;
 		// Bridge注入とオプション構築呼び出し
 		foreach($buttons as $option){
 			$option->setBridge($bridge);
-			$bridge->all($option->getOptions());
+			$array = $option->getOptions();
+			$bridge->race($counter, $array);
+			$counter += count($array);
 		}
 
 		// 各 MenuOptions に紐づくボタン群を構築
@@ -171,7 +177,8 @@ class AwaitFormOptions{
 
 					// 該当オプションへ解決通知
 					$bridge->solve($id, $key);
-					return $key;
+					$returns = $bridge->getReturns();
+					return $returns[$id] ?? null;
 				}
 			}
 		}catch(AwaitFormException $awaitFormException){
