@@ -279,7 +279,7 @@ class NameMenuOptions extends MenuOptions{
 	public function optionsB() : \Generator{
 		try{
 			$test = yield from $this->request([
-				[Button::simple("a"), "a"], //重複するキーを使用した場合でも、Awaitformoptionはそれを解決します。
+				[Button::simple("a"), "a"], //Even if you use duplicate keys, Awaitformoption will resolve it
 			]);
 			$this->player->sendMessage($test.", ".__FUNCTION__);
 		}catch(AwaitFormException $exception){
