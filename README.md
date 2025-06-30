@@ -331,6 +331,104 @@ public function a(PlayerItemUseEvent $event): void {
 
 ---
 
+### 🧩 Menu Advanced Usage: Attaching Objects to Buttons
+Normally, Button::simple("label") returns a Button that maps to a string value.
+But what if you want to associate a more complex object, like a Player, Entity, or CustomData — with each button?
+
+You can do this easily by passing `[Button::simple(...), $value]` into the menu array.
+
+```php
+$selected  = yield from $this->request([
+    [Button::simple("Label A"), $someObject],
+    [Button::simple("Label B"), "custom-id"],
+    [Button::simple("Label C"), 123],
+]);
+```
+#### In this format:
+- The first element is always a Button object.
+- The second element is the value that will be returned if the button is selected.
+- The returned result is mapped correctly even for duplicate labels or repeated values.
+- You can use any scalar or object, including players, entities, and custom classes.
+
+### Example
+
+```php
+public function onUse(PlayerItemUseEvent $event): void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player) {
+        try {
+
+            $entities = [];
+            $world = $player->getWorld();
+            foreach($world->getEntities() as $entity){
+                if(!$entity instanceof Living){
+                    continue;
+                }
+                $entities[] = $entity;
+            }
+
+            yield from AwaitFormOptions::sendMenuAsync(
+                player: $player,
+                title: "Food Assistance",
+                content: "Please select an option",
+                buttons: [
+                    new EntityNameMenuOptions($player, $entities),
+                ],
+                neverRejects: true,
+                throwExceptionInCaller: false
+            );
+        } catch (FormValidationException) {
+            // The form was cancelled or failed
+        }
+    });
+}
+```
+
+### EntityNameMenuOptions.php
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+use pocketmine\player\Player;
+use cosmicpe\awaitform\Button;
+use pocketmine\entity\Entity;
+use cosmicpe\awaitform\AwaitFormException;
+
+class EntityNameMenuOptions extends MenuOptions {
+	public function __construct(private Player $player, private array $entities) {}
+
+	public function chooseEntity(): \Generator {
+		try {
+			$buttons = [];
+
+			foreach ($this->entities as $entity) {
+				// Display name, attach Entity instance
+				$buttons[] = [Button::simple($entity->getName()), $entity];
+			}
+
+			/** @var Entity $selected */
+			$selected = yield from $this->request($buttons);
+
+			$this->player->sendMessage("You chose: " . $selected->getName());
+		} catch (AwaitFormException) {
+			// Closed
+		}
+	}
+
+	public function getOptions(): array {
+		return [$this->chooseEntity()];
+	}
+}
+```
+
+---
+
 # Example
 
 ### 🐲 MobKillerOptions (Entity Interaction via Menu)
