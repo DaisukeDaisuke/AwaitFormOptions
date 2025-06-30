@@ -400,18 +400,23 @@ use cosmicpe\awaitform\Button;
 use pocketmine\entity\Entity;
 use cosmicpe\awaitform\AwaitFormException;
 
-class SimpleButton extends MenuOptions {
+class EntityNameMenuOptions extends MenuOptions {
 	public function __construct(private Player $player, private array $entities) {}
 
 	public function chooseEntity(): \Generator {
 		try {
+			$buttons = [];
+
+			foreach ($this->entities as $entity) {
 				// Display name, attach Entity instance
-				$buttons[] =
+				$buttons[] = [Button::simple($entity->getName()), $entity];
+			}
 
 			/** @var Entity $selected */
-			$selected = yield from $this->request([Button::simple($entity->getName()), $entity];);
+			$selected = yield from $this->request($buttons);
 
 			$this->player->sendMessage("You chose: " . $selected->getName());
+			return $selected;
 		} catch (AwaitFormException) {
 			// Closed
 		}
