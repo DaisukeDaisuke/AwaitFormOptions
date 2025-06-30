@@ -176,7 +176,6 @@ If throwExceptionInCaller is true, the parent generator will receive an AwaitFor
 ```php
 public function a(PlayerItemUseEvent $event) : void{
     $player = $event->getPlayer();
-
     Await::f2c(function() use ($player){
         try{
             yield from AwaitFormOptions::sendFormAsync(
