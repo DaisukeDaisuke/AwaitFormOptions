@@ -517,7 +517,7 @@ NULL
 Forms can retrieve the return value of a generator in the same way, note that in this case it maps to the keys of the option array.
 
 > [!NOTE]
-> Please note that when `$neverRejects` is true, the child generator processing is terminated, so an empty array is returned if an error occurs in the sendFormAsync
+> Note that when `$neverRejects` is true, child generator processing is forcefully terminated, so an empty array is returned if an error occurs in the form
 
 ```php
 public function onUse(PlayerItemUseEvent $event): void{
