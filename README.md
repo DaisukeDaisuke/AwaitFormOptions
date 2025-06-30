@@ -472,6 +472,8 @@ class ConfirmInputForm extends FormOptions{
 ## 🍖 HP-Dependent Form Options (Dynamic Option Filtering)
 You can conditionally include different form options by selecting which yield generators are returned from getOptions(), this is a key strength of AwaitFormOptions over flat form construction.
 
+![Image](https://github.com/user-attachments/assets/d3d51ed1-4b67-4530-8b9b-f95eba980cdb)
+
 ### HpBasedFoodOptions.php
 
 ```php
