@@ -94,7 +94,11 @@ class AwaitFormOptions{
 				throw $awaitFormException;
 			}
 		}
-		return array_combine($options_keys, $bridge->getReturns());
+		/*!$neverRejects === true => return []*/
+		if(count($options_keys) == count($bridge->getReturns())){
+			return array_combine($options_keys, $bridge->getReturns());
+		}
+		return [];
 	}
 
 	/**
