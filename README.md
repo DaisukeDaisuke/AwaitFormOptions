@@ -431,7 +431,7 @@ Each generator that you define in your FormOptions or MenuOptions class can retu
 This allows you to treat each form step as a small function that produces a result, just like any other callable.
 
 ## Menu Example
-Here, the selected entity object is returned directly from the generator:
+Here, the selected button id is returned directly from the generator:
 
 ```php
 public function onUse(PlayerItemUseEvent $event): void{
