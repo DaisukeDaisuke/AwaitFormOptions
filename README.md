@@ -55,7 +55,6 @@ Split your form logic into reusable, testable option classes:
 ```php
 public function a(PlayerItemUseEvent $event) : void{
     $player = $event->getPlayer();
-
     Await::f2c(function() use ($player){
         try{
             yield from AwaitFormOptions::sendFormAsync(
@@ -139,7 +138,7 @@ Try passing the same class multiple times:
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
-	$player = $event->getPlayer();
+    $player = $event->getPlayer();
     Await::f2c(function () use ($player) {
         try {
             yield from AwaitFormOptions::sendFormAsync(
