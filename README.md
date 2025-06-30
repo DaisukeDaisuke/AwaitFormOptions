@@ -331,6 +331,236 @@ public function a(PlayerItemUseEvent $event): void {
 
 ---
 
+# Example
+
+### 🐲 MobKillerOptions (Entity Interaction via Menu)
+AwaitFormOptions can be used for more than just player configuration, it also allows you to handle dynamic entities such as mobs or NPCs using menu interactions.
+Here is a concrete example that lets a player select entities in their current world and kill them via a menu.
+
+![Image](https://github.com/user-attachments/assets/a7bc338d-2851-450a-8827-5bb3392d5137)
+
+```php
+public function onUse(PlayerItemUseEvent $event): void{
+    $player = $event->getPlayer();
+    $world = $player->getWorld();
+
+    if(!$player->isSneaking()){
+        return;
+    }
+
+    $forms = [];
+    foreach($world->getEntities() as $entity){
+        if($entity === $player || !$entity instanceof Living){
+            continue;
+        }
+        $forms[] = new MobKillerForm($entity);
+    }
+
+    Await::f2c(function() use ($player, $forms) : \Generator{
+        yield from AwaitFormOptions::sendMenuAsync(
+            player: $player,
+            title: "Mob Terminator",
+            content: "Choose a mob to eliminate:",
+            buttons: $forms,
+            neverRejects: true,
+            throwExceptionInCaller: false
+        );
+    });
+}
+```
+
+### 🧪 Option Class Example: MobKillerForm
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+use pocketmine\entity\Entity;
+use cosmicpe\awaitform\Button;
+
+class MobKillerForm extends MenuOptions{
+
+	public function __construct(private readonly Entity $entity){
+	}
+
+	public function KillerForm() : \Generator{
+		yield from $this->request([
+			[Button::simple($this->entity->getName() . " (" . $this->entity->getId() . ")"), "a"],
+		]);
+		$this->entity->kill();
+	}
+
+	public function getOptions() : array{
+		return [
+			$this->KillerForm(),
+		];
+	}
+}
+
+```
+
+---
+
+## Non-Cancellable Form (Forced Confirmation)
+Sometimes, you want to prevent players from skipping or cancelling a form unless they acknowledge a specific phrase or condition — such as typing "yes".
+With AwaitFormOptions, this can be done cleanly by combining input validation and throwExceptionInCaller: true.
+
+### Usage
+
+![Image](https://github.com/user-attachments/assets/8e735c4f-c674-4e4e-8cde-79cbb8ab378f)
+
+```php
+public function onUse(PlayerItemUseEvent $event) : void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player){
+        while(true){
+            try{
+                [$typed] = yield from AwaitFormOptions::sendFormAsync(
+                    player: $player,
+                    title: "Confirmation",
+                    options: [new ConfirmInputForm()],
+                    neverRejects: true,
+                    throwExceptionInCaller: true
+                );
+                if(strtolower(trim($typed)) === "yes"){
+                    $player->sendToastNotification("Confirmed", "Thanks for typing!");
+                    break;
+                }
+
+            }catch(AwaitFormException $exception){
+                if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
+                    break;
+                }
+            }
+            $player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
+        }
+    });
+}
+```
+
+### 🧪 Option Class: ConfirmInputForm
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\FormOptions;
+use cosmicpe\awaitform\FormControl;
+
+class ConfirmInputForm extends FormOptions{
+	public function confirmOnce(): \Generator {
+		[$input] = yield from $this->request([
+			FormControl::input("Type 'yes' to confirm", "yes", ""),
+		]);
+		return $input;
+	}
+
+	public function getOptions(): array {
+		return [$this->confirmOnce()];
+	}
+}
+```
+
+---
+
+## 🍖 HP-Dependent Form Options (Dynamic Option Filtering)
+You can conditionally include different form options by selecting which yield generators are returned from getOptions(), this is a key strength of AwaitFormOptions over flat form construction.
+
+### HpBasedFoodOptions.php
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use pocketmine\player\Player;
+use pocketmine\item\VanillaItems;
+use cosmicpe\awaitform\FormControl;
+use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+
+class HpBasedFoodOptions extends MenuOptions{
+
+	public function __construct(private readonly Player $player){
+	}
+
+	public function giveRawFish() : \Generator{
+		yield from $this->request([
+			Button::simple("§2You are full of strength! Enjoy this raw fish.§r"),
+		]);
+		$this->player->getInventory()->addItem(VanillaItems::RAW_FISH()->setCount(1));
+		$this->player->sendToastNotification("Food Given", "Raw Fish");
+	}
+
+	public function giveCookedFish() : \Generator{
+		yield from $this->request([
+			Button::simple("§6You're moderately hurt. Take this cooked fish.§r"),
+		]);
+		$this->player->getInventory()->addItem(VanillaItems::COOKED_FISH()->setCount(1));
+		$this->player->sendToastNotification("Food Given", "Cooked Fish");
+	}
+
+	public function giveSteak() : \Generator{
+		yield from $this->request([
+			Button::simple("§4You're starving! Here's a juicy steak.§r"),
+		]);
+		$this->player->getInventory()->addItem(VanillaItems::STEAK()->setCount(1));
+		$this->player->sendToastNotification("Food Given", "Steak");
+	}
+
+	public function getOptions() : array{
+		$hp = $this->player->getHealth();
+
+		$result = [];
+		if($hp <= 20){
+			$result[] = $this->giveRawFish();
+		}
+		if($hp <= 10){
+			$result[] = $this->giveCookedFish();
+		}
+		if($hp <= 5){
+			$result[] = $this->giveSteak();
+		}
+		return $result;
+	}
+}
+```
+
+### Usage
+
+```php
+public function onUse(PlayerItemUseEvent $event): void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player) {
+        try {
+            yield from AwaitFormOptions::sendMenuAsync(
+                player: $player,
+                title: "Food Assistance",
+                content: "Please select an option",
+                buttons: [
+                    new HpBasedFoodOptions($player),
+                ],
+                neverRejects: true,
+                throwExceptionInCaller: true
+            );
+        } catch (FormValidationException|AwaitFormException) {
+            // The form was cancelled or failed
+        }
+    });
+
+}
+```
+
+
 ## Summary
 
 ✅ Modular  
