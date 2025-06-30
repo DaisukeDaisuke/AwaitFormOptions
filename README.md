@@ -522,6 +522,7 @@ Forms can retrieve the return value of a generator in the same way, note that in
 
 > [!NOTE]
 > Note that when `$neverRejects` is true, child generator processing is forcefully terminated, so an empty array is returned if an error occurs in the form
+> sendFormAsync will collect all return values of the closure even if it fails, as long as neverRejects is false. Note that this is different behavior from menu
 
 ```php
 public function onUse(PlayerItemUseEvent $event): void{
