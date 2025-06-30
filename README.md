@@ -259,27 +259,37 @@ namespace daisukedaisuke\test;
 use cosmicpe\awaitform\Button;
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\player\Player;
+use cosmicpe\awaitform\AwaitFormException;
 
-class NameMenuOptions extends MenuOptions {
-	public function __construct(private Player $player, private array $options) {}
+class NameMenuOptions extends MenuOptions{
+	public function __construct(private Player $player, private array $options){
+	}
 
-	public function optionsA(): \Generator {
-		$buttons = [];
-		foreach ($this->options as $item) {
-			$buttons[$item] = Button::simple($item);
+	public function optionsA() : \Generator{
+		try{
+			$test = [];
+			foreach($this->options as $item){
+				$test[$item] = Button::simple($item);
+			}
+			$test = yield from $this->request($test);
+			$this->player->sendMessage($test.", ".__FUNCTION__);
+		}catch(AwaitFormException $exception){
+
 		}
-		$selected = yield from $this->request($buttons);
-		$this->player->sendMessage($selected . ", " . __FUNCTION__);
 	}
 
-	public function optionsB(): \Generator {
-		$selected = yield from $this->request([
-			[Button::simple("a"), "a"], // Even duplicate keys are resolved correctly
-		]);
-		$this->player->sendMessage($selected . ", " . __FUNCTION__);
+	public function optionsB() : \Generator{
+		try{
+			$test = yield from $this->request([
+				[Button::simple("a"), "a"], //重複するキーを使用した場合でも、Awaitformoptionはそれを解決します。
+			]);
+			$this->player->sendMessage($test.", ".__FUNCTION__);
+		}catch(AwaitFormException $exception){
+
+		}
 	}
 
-	public function getOptions(): array {
+	public function getOptions() : array{
 		return [
 			$this->optionsB(),
 			$this->optionsA(),
@@ -311,6 +321,7 @@ public function a(PlayerItemUseEvent $event): void {
                     new NameMenuOptions($player, ["i", "j"]),
                 ],
                 neverRejects: false,
+                throwExceptionInCaller: false
             );
         } catch (FormValidationException) {
         }

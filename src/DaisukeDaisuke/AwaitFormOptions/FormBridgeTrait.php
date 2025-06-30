@@ -35,6 +35,8 @@ trait FormBridgeTrait{
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace();
 			throw new AwaitFromOptionsInvalidValueException($exception->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0, $exception);
+		}finally{
+			unset($this->bridge);
 		}
 	}
 }

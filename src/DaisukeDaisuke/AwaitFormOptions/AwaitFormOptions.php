@@ -35,7 +35,7 @@ class AwaitFormOptions{
 	/**
 	 * @param Player $player
 	 * @param string $title
-	 * @param array<FormOptions> $options await fun
+	 * @param array<FormOptions> $options Awaitable form option providers
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
 	 * @return \Generator
@@ -48,7 +48,7 @@ class AwaitFormOptions{
 
 		foreach($options as $option){
 			$option->setBridge($bridge);
-			RequestResponseBridge::all($option->getOptions());
+			$bridge->all($option->getOptions());
 		}
 
 
@@ -61,6 +61,7 @@ class AwaitFormOptions{
 				if(is_array($item)){
 					[$item, $key] = $item;
 				}
+				// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
 				if(!is_scalar($key)||is_object($key)){
 					//HACK: Making backtraces useful
 					$bridge->reject($id, new \InvalidArgumentException("key must be scalar"));
@@ -115,7 +116,7 @@ class AwaitFormOptions{
 	 * @param Player $player
 	 * @param string $title
 	 * @param string $content
-	 * @param array<MenuOptions> $buttons
+	 * @param array<MenuOptions> $buttons Awaitable menu option providers
 	 * @param bool $neverRejects
 	 * @param bool $throwExceptionInCaller
 	 * @return \Generator<mixed>
@@ -131,7 +132,7 @@ class AwaitFormOptions{
 		// Bridge注入とオプション構築呼び出し
 		foreach($buttons as $option){
 			$option->setBridge($bridge);
-			RequestResponseBridge::all($option->getOptions());
+			$bridge->all($option->getOptions());
 		}
 
 		// 各 MenuOptions に紐づくボタン群を構築
@@ -142,6 +143,7 @@ class AwaitFormOptions{
 		foreach(yield from $bridge->getAllExpected() as $id => $array){
 			$keys = [];
 			$count = 0;
+			$start = $counter;
 			foreach($array as $key => $item){
 				if(is_array($item)){
 					[$item, $key] = $item;
@@ -153,7 +155,7 @@ class AwaitFormOptions{
 				$flatButtons[$counter++] = $item;
 				$keys[$count++] = $key;
 			}
-			$index[$id] = [$counter - count($array), $counter - 1, $keys];
+			$index[$id] = [$start, $counter - 1, $keys];
 		}
 
 		try{

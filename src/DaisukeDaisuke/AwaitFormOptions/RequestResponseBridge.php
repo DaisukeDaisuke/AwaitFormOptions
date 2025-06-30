@@ -78,6 +78,7 @@ class RequestResponseBridge{
 	public function reject(int $id, \Throwable $throwable) : void{
 		if(isset($this->rejects[$id])){
 			($this->rejects[$id])($throwable);
+			unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
 		}
 	}
 
@@ -85,7 +86,7 @@ class RequestResponseBridge{
 	 * @param array<\Generator<mixed>> $array
 	 * @return void
 	 */
-	public static function all(array $array) : void{
+	public function all(array $array) : void{
 		Await::g2c(Await::all($array));
 	}
 
