@@ -22,11 +22,12 @@ trait FormBridgeTrait{
 	 */
 	public function request(array $value) : \Generator{
 		$missed = false;
-		foreach($value as $v){
-			if(!is_array($v) && count($value) === 2){
-				$missed = true;
+		if(count($value) === 2){
+			if($value[0] instanceof FormControl || $value[0] instanceof Button){
+				if(!$value[1] instanceof FormControl && !$value[1] instanceof Button){
+					$missed = true;
+				}
 			}
-			break;
 		}
 		if($missed){
 			$value = [$value];
