@@ -438,6 +438,10 @@ This allows you to treat each form step as a small function that produces a resu
 ## Menu Example
 Here, the selected button id is returned directly from the generator:
 
+> [!NOTE]
+> Please Note that if the form fails, any return values from the child generators will be ignored and null will be returned
+
+
 ```php
 public function onUse(PlayerItemUseEvent $event): void{
     $player = $event->getPlayer();
