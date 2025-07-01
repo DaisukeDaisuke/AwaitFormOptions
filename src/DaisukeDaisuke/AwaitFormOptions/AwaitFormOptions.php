@@ -51,7 +51,9 @@ class AwaitFormOptions{
 		foreach($options as $option){
 			$option->setBridge($bridge);
 			$array = $option->getOptions();
-			$bridge->all($counter++, $array);
+			if(count($array) !== 0){
+				$bridge->all($counter++, $array);
+			}
 		}
 
 
@@ -141,7 +143,9 @@ class AwaitFormOptions{
 		foreach($buttons as $option){
 			$option->setBridge($bridge);
 			$array = $option->getOptions();
-			$bridge->race($counter, $array);
+			if(count($array) !== 0){
+				$bridge->race($counter, $array);
+			}
 			$counter += count($array);
 		}
 
