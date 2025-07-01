@@ -4,7 +4,7 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 
 use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Await;
-use SOFe\AwaitGenerator\Traverser;
+use SOFe\AwaitGenerator\AwaitException;
 
 class RequestResponseBridge{
 
@@ -82,9 +82,28 @@ class RequestResponseBridge{
 	}
 
 	public function reject(int $id, \Throwable $throwable) : void{
-		if(isset($this->rejects[$id])){
-			($this->rejects[$id])($throwable);
-			unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
+		try{
+			if(isset($this->rejects[$id])){
+				($this->rejects[$id])($throwable);
+				unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
+			}
+		}catch(AwaitException $exception){
+			/**
+			 * HACK: Workaround to suppress nested AwaitException wrapping
+			 * Normally, SOFe\AwaitGenerator wraps thrown exceptions in AwaitException at every yield-from level.
+			 * This leads to deep nesting like AwaitException → AwaitException → OriginalException,
+			 * which makes debugging more difficult.
+			 *
+			 * By catching the outer AwaitException and re-throwing only its $previous,
+			 * we intentionally skip one layer of wrapping to improve clarity in error messages.
+			 *
+			 * ⚠ WARNING: This assumes that the caught AwaitException always has a valid ->getPrevious()
+			 * and that ignoring one layer of wrapping does not break Await's internal logic.
+			 * Use with caution and test thoroughly if changes are made to AwaitGenerator internals.
+			 *
+			 * @See Await::reject() for reference.
+			 */
+			throw $exception->getPrevious() ?? $exception;
 		}
 	}
 

@@ -51,6 +51,11 @@ class AwaitFormOptions{
 		foreach($options as $option){
 			$option->setBridge($bridge);
 			$array = $option->getOptions();
+			try{
+				Utils::validateArrayValueType($array, static function(\Generator $value) : void{});
+			}catch(\TypeError){
+				throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator");
+			}
 			if(count($array) !== 0){
 				$bridge->all($counter++, $array);
 			}
@@ -64,12 +69,15 @@ class AwaitFormOptions{
 			$keys = [];
 			foreach($array as $key => $item){
 				if(is_array($item)){
+					if(!(array_is_list($item) && count($item) === 2)){
+						$bridge->reject($id, new \InvalidArgumentException("The requested array does not meet the requirements, see also AwaitFormOptions::sendFormAsync()"));
+					}
 					[$item, $key] = $item;
 				}
 				// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
 				if(!is_scalar($key)||is_object($key)){
 					//HACK: Making backtraces useful
-					$bridge->reject($id, new \InvalidArgumentException("key must be scalar"));
+					$bridge->reject($id, new \InvalidArgumentException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
 					return [];
 				}
 				$keys[] = $key;
@@ -143,6 +151,11 @@ class AwaitFormOptions{
 		foreach($buttons as $option){
 			$option->setBridge($bridge);
 			$array = $option->getOptions();
+			try{
+				Utils::validateArrayValueType($array, static function(\Generator $value) : void{});
+			}catch(\TypeError){
+				throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
+			}
 			if(count($array) !== 0){
 				$bridge->race($counter, $array);
 			}
@@ -160,11 +173,21 @@ class AwaitFormOptions{
 			$start = $counter;
 			foreach($array as $key => $item){
 				if(is_array($item)){
+					if(!(array_is_list($item) && count($item) === 2)){
+						$bridge->reject(
+							$id,
+							new \InvalidArgumentException(
+								"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
+								"Ensure that your form returns an array like [Button, SelectedKey]. "  .
+								"See also: AwaitFormOptions::sendMenuAsync()"
+							)
+						);
+					}
 					[$item, $key] = $item;
 				}
 				if(!$item instanceof Button){
 					//HACK: Making backtraces useful
-					$bridge->reject($id, new \InvalidArgumentException("Button is required"));
+					$bridge->reject($id, new \InvalidArgumentException("Button is required, see also AwaitFormOptions::sendMenuAsync()"));
 				}
 				$flatButtons[$counter++] = $item;
 				$keys[$count++] = $key;
