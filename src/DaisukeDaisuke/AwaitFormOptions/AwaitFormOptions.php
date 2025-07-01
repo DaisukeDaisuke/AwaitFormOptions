@@ -70,7 +70,19 @@ class AwaitFormOptions{
 			foreach($array as $key => $item){
 				if(is_array($item)){
 					if(!(array_is_list($item) && count($item) === 2)){
-						$bridge->reject($id, new \InvalidArgumentException("The requested array does not meet the requirements, see also AwaitFormOptions::sendFormAsync()"));
+						if(array_is_list($item)){
+							$bridge->reject(
+								$id,
+								new \InvalidArgumentException(
+									"The request value must be a 2-element list array [Button, key], but an array with ".count($item)." element(s) was given. \n".
+									" (key: " . $key . "). " .
+									"Ensure that your form returns an array like [Button, SelectedKey]. ".
+									"See also: AwaitFormOptions::sendMenuAsync()"
+								)
+							);
+						}else{
+							$item = array_values($item);
+						}
 					}
 					[$item, $key] = $item;
 				}
@@ -174,14 +186,19 @@ class AwaitFormOptions{
 			foreach($array as $key => $item){
 				if(is_array($item)){
 					if(!(array_is_list($item) && count($item) === 2)){
-						$bridge->reject(
-							$id,
-							new \InvalidArgumentException(
-								"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
-								"Ensure that your form returns an array like [Button, SelectedKey]. "  .
-								"See also: AwaitFormOptions::sendMenuAsync()"
-							)
-						);
+						if(array_is_list($item)){
+							$bridge->reject(
+								$id,
+								new \InvalidArgumentException(
+									"The request value must be a 2-element list array [Button, key], but an array with ".count($item)." element(s) was given. \n".
+									" (key: " . $key . "). " .
+									"Ensure that your form returns an array like [Button, SelectedKey]. ".
+									"See also: AwaitFormOptions::sendMenuAsync()"
+								)
+							);
+						}else{
+							$item = array_values($item);
+						}
 					}
 					[$item, $key] = $item;
 				}
