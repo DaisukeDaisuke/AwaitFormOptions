@@ -839,7 +839,7 @@ public function onUse(PlayerItemUseEvent $event): void{
 }
 ```
 
-# Form Available elements
+### Form Available elements
 
 ```php
 FormControl::divider() // Adds a horizontal divider to visually separate form sections.
@@ -854,7 +854,7 @@ FormControl::stepSlider(string $label, array $steps, ?string $default = null) //
 FormControl::toggle(string $label, bool $default = false) // A boolean toggle (checkbox). Returns true/false.
 ```
 
-# Menu Available elements
+### Menu Available elements
 ```php
 Button::simple("§4You're starving! Here's a juicy steak.§r") // One user selectable button with text
 ```
