@@ -87,7 +87,7 @@ Each option will yield from `$this->request($form);` and wait for the response. 
 > Additionally, the following exceptions may be thrown from `request()`:
 > - `BadFunctionCallException`: When `request()` is called more than once in the same generator.
 > - `AwaitFromOptionsInvalidValueException`: When the provided form/button array is invalid.
-> - `AwaitFormException`: If the player closes the form, input is invalid, or the player logs out.
+> - `AwaitFormException`: If the player rejects the form, input is invalid, or the player logs out.
 
 
 ```php
