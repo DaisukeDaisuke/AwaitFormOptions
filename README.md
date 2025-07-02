@@ -192,7 +192,7 @@ If throwExceptionInCaller is true, the parent generator will receive an AwaitFor
 >     Always make sure to catch `AwaitFormException` when using this setting.   
 >
 > - If `neverRejects` is set to `true`, `AwaitFormOptions` will **silently terminate the child generator** when a form is closed or rejected.    
->     The affected generator scope will be forcibly interrupted without throwing, and no return value will be collected.  
+>     The affected generator coroutine will be forcibly interrupted without throwing, and no return value will be collected.  
 >     You do not need to catch exceptions in this case, but be aware that the logic inside the generator will not complete.  
 >  
 >- If `throwExceptionInCaller` is `true`, `AwaitFormOptions` will **re-throw `AwaitFormException` in the parent `f2c()` coroutine** after applying `neverRejects` behavior.   
@@ -213,7 +213,7 @@ If throwExceptionInCaller is true, the parent generator will receive an AwaitFor
 > ✅ To suppress all exceptions:    
 > &nbsp;&nbsp;&nbsp;&nbsp;Set `neverRejects: true`, `throwExceptionInCaller: false`  
 >  
-> ✅ To catch rejections **only** in the parent scope:    
+> ✅ To catch rejections **only** in the parent coroutine:    
 > &nbsp;&nbsp;&nbsp;&nbsp;Set `neverRejects: true`, `throwExceptionInCaller: true`  
 
 
