@@ -553,11 +553,11 @@ Forms can retrieve the return value of a generator in the same way, note that in
 >     return ["test" => $this->confirmOnce()];
 > }
 > ```
->
+>  
 > And if you pass `["output" => new ConfirmInputForm()]` into `sendFormAsync()`,  
 > and the generator returned `"yes"` from the `"test"` key,  
-> the result will be:
->
+> the result will be:  
+>  
 > ```php
 > [
 >     "output" => [
