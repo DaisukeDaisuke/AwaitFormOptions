@@ -35,7 +35,7 @@ trait FormBridgeTrait{
 
 		Utils::validateArrayValueType($value, static function(FormControl|Button|array $value){});
 		if(!isset($this->bridge)){
-			throw new \BadFunctionCallException("bridge is not set");
+			throw new \BadFunctionCallException("bridge is not set, Maybe you called \$this->request() twice?");
 		}
 		try{
 			return yield from $this->bridge->request($value);
