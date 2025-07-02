@@ -70,7 +70,7 @@ class AwaitFormOptions{
 			foreach($array as $key => $item){
 				if(is_array($item)){
 					if(!(array_is_list($item) && count($item) === 2)){
-						if(array_is_list($item)){
+						if(array_is_list($item)&&count($item) !== 2){
 							$bridge->reject(
 								$id,
 								new \InvalidArgumentException(
@@ -186,7 +186,7 @@ class AwaitFormOptions{
 			foreach($array as $key => $item){
 				if(is_array($item)){
 					if(!(array_is_list($item) && count($item) === 2)){
-						if(array_is_list($item)){
+						if(array_is_list($item)&&count($item) !== 2){
 							$bridge->reject(
 								$id,
 								new \InvalidArgumentException(
