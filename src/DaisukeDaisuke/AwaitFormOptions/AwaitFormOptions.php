@@ -77,7 +77,7 @@ class AwaitFormOptions{
 									"The request value must be a 2-element list array [Button, key], but an array with ".count($item)." element(s) was given. \n".
 									" (key: " . $key . "). " .
 									"Ensure that your form returns an array like [Button, SelectedKey]. ".
-									"See also: AwaitFormOptions::sendMenuAsync()"
+									"See also: AwaitFormOptions::sendFormAsync()"
 								)
 							);
 						}else{
