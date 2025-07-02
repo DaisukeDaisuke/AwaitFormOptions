@@ -856,7 +856,7 @@ FormControl::toggle(string $label, bool $default = false) // A boolean toggle (c
 
 ### Menu Available elements
 ```php
-Button::simple("§4You're starving! Here's a juicy steak.§r") // One user selectable button with text
+Button::simple(string $text) // One user selectable button with text
 ```
 
 ## Summary
