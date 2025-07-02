@@ -77,11 +77,11 @@ public function a(PlayerItemUseEvent $event) : void{
 
 ## Example Option Class
 
-Each option will yield from `$this->request($form);` and wait for the response. No more losing context!
-
+Each option will yield from `$this->request($form);` and wait for the response. No more losing context!  
+  
 > [!IMPORTANT]
-> yield from $this->request() can only be called once per generator. Calling it multiple times requires re-execution of the parent function.
-> Calling it more than twice on a one generator will raise an exception.
+> yield from $this->request() can only be called once per generator. Calling it multiple times requires re-execution of the parent function.  
+> Calling it more than twice on a one generator will raise an exception.  
 
 ```php
 <?php
