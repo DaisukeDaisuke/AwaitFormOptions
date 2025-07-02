@@ -184,6 +184,37 @@ If neverRejects is false, the child generator must handle the AwaitFormException
 
 If throwExceptionInCaller is true, the parent generator will receive an AwaitFormException  
 
+> [!TIP]
+> ⚙️ **Exception Behavior with `neverRejects` and `throwExceptionInCaller`**  
+>  
+> - If `neverRejects` is set to `false`, each child generator will **attempt to throw an `AwaitFormException`** when the form is closed or rejected.    
+>      If the exception is not caught inside the generator, it will **crash the server** with a long stack trace.   
+>      Always make sure to catch `AwaitFormException` when using this setting.   
+>
+> - If `neverRejects` is set to `true`, `AwaitFormOptions` will **silently terminate the child generator** when a form is closed or rejected.    
+>       The affected generator scope will be forcibly interrupted without throwing, and no return value will be collected.  
+>       You do not need to catch exceptions in this case, but be aware that the logic inside the generator will not complete.  
+>  
+> - If `throwExceptionInCaller` is `true`, `AwaitFormOptions` will **re-throw `AwaitFormException` in the parent `f2c()` coroutine** after applying `neverRejects` behavior.   
+>       ⚠️ In this mode, generator return values will **not be available**, because the coroutine is terminated by the exception.  
+>    
+> - If `throwExceptionInCaller` is `false`, `AwaitFormException` will not be propagated to the parent coroutine.    
+>       However, **`FormValidationException` may still occur** if the player submits invalid input.  
+>  
+> 🔸 `FormValidationException` is used to signal **player-caused input validation errors**, such as leaving a required field blank.    
+>    It does **not** include form construction errors.  
+>
+> 🔸 If the form configuration itself is invalid (e.g., malformed option arrays, duplicate keys, missing inputs),    
+>    an `AwaitFormOptionsInvalidValueException` will be thrown.    
+>    This usually indicates a **programming bug** and should **not be caught in production logic**.  
+>  
+> ✅ To suppress all exceptions:    
+> &nbsp;&nbsp;&nbsp;&nbsp;Set `neverRejects: true`, `throwExceptionInCaller: false`  
+>  
+> ✅ To catch rejections **only** in the parent scope:    
+> &nbsp;&nbsp;&nbsp;&nbsp;Set `neverRejects: true`, `throwExceptionInCaller: true`  
+
+
 ```php
 public function a(PlayerItemUseEvent $event) : void{
     $player = $event->getPlayer();
