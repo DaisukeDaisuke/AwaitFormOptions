@@ -110,12 +110,17 @@ class RequestResponseBridge{
 	/**
 	 * @param int $id
 	 * @param array<\Generator<mixed>> $array
+	 * @param array|null $keys
 	 * @return void
 	 */
-	public function all(int $id, array $array) : void{
-		Await::f2c(function() use ($id, $array){
+	public function all(int $id, array $array,  ?array $keys = []) : void{
+		Await::f2c(function() use ($id, $array, $keys){
 			$return = yield from Await::All($array);
-			$this->returns[$id] = $return;
+			if($keys !== null){
+				$this->returns[$id] = array_combine($keys, $return);
+			}else{
+				$this->returns[$id] = $return;
+			}
 		});
 	}
 

@@ -57,7 +57,7 @@ class AwaitFormOptions{
 				throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator");
 			}
 			if(count($array) !== 0){
-				$bridge->all($counter++, $array);
+				$bridge->all($counter++, $array, array_keys($array));
 			}
 		}
 

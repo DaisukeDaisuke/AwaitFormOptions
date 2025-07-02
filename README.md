@@ -209,7 +209,10 @@ public function a(PlayerItemUseEvent $event) : void{
 
 ## Standalone
 
-sendForm and sendMenu can also be called completely standalone, without receiving exceptions  
+sendForm and sendMenu may also be called standalone. In that case:
+- No exception is thrown, even if the user cancels the form.
+- The generator's return value is discarded.
+- The functions always return void (null).
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
@@ -534,6 +537,45 @@ Forms can retrieve the return value of a generator in the same way, note that in
 > [!NOTE]
 > Note that when `$neverRejects` is true, child generator processing is forcefully terminated, so an empty array is returned if an error occurs in the form  
 > sendFormAsync will collect all generator return values even if the form fails as long as neverRejects is false. Note that this is different behavior from menu.  
+>
+
+> [!TIP]
+> In `sendFormAsync()`, the return value preserves:  
+>  
+> - The keys from the top-level `options` array, and  
+> - The keys from each `FormOptions::getOptions()` result.  
+>  
+> This allows both levels of return values to be mapped clearly.    
+> For example:  
+>  
+> ```php
+> public function getOptions(): array {
+>     return ["test" => $this->confirmOnce()];
+> }
+> ```
+>  
+> And if you pass `["output" => new ConfirmInputForm()]` into `sendFormAsync()`,   
+> the result will be:  
+>  
+> ```php
+> [
+>     "output" => [
+>         "test" => "yes"
+>     ]
+> ]
+> ```
+>  
+> However, in `sendMenuAsync()`, only the return value of the **selected generator** is returned.  
+> You will either get:  
+>  
+> - The return value from the selected `MenuOptions` generator, or  
+> - `null` if the form was cancelled or no selection was made.  
+>  
+> Thus:  
+>
+> ✅ `getOptions()` keys → respected in `sendFormAsync()`   
+> ❌ `getOptions()` keys → ignored in `sendMenuAsync()` (since only one is returned)  
+  
 
 ```php
 public function onUse(PlayerItemUseEvent $event): void{
