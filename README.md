@@ -337,7 +337,7 @@ public function a(PlayerItemUseEvent $event): void {
 
 ### 🧩 Menu Advanced Usage: Attaching Objects to Buttons
 Normally, Button::simple("label") returns a Button that maps to a string value.
-But what if you want to associate a more complex object, like a Player, Entity, or CustomData — with each button?
+But what if you want to associate a more complex object, like a Player, Entity, or CustomData // with each button?
 
 You can do this easily by passing `[Button::simple(...), $value]` into the menu array.
 
@@ -679,7 +679,7 @@ class MobKillerForm extends MenuOptions{
 ---
 
 ## Non-Cancellable Form (Forced Confirmation)
-Sometimes, you want to prevent players from skipping or cancelling a form unless they acknowledge a specific phrase or condition — such as typing "yes".
+Sometimes, you want to prevent players from skipping or cancelling a form unless they acknowledge a specific phrase or condition // such as typing "yes".
 With AwaitFormOptions, this can be done cleanly by combining input validation and throwExceptionInCaller: true.
 
 ### Usage
@@ -839,6 +839,25 @@ public function onUse(PlayerItemUseEvent $event): void{
 }
 ```
 
+# Form Available elements
+
+```php
+FormControl::divider() // Adds a horizontal divider to visually separate form sections.
+FormControl::dropdown(string $label, array $options, ?string $default = null) // Select from a list of options, returns the selected value.
+FormControl::dropdownIndex(string $label, array $options, int $default = 0) // Select from a list of options, returns the selected index.
+FormControl::dropdownMap(string $label, array $options, array $mapping, mixed $default = null) // Select from a list of options, returns a mapped value.
+FormControl::header(string $label) // Adds a bold header text to highlight sections.
+FormControl::input(string $label, string $placeholder = "", string $default = "") // Text input field. Returns user input as a string.
+FormControl::label(string $label) // Static text label, for descriptions or instructions.
+FormControl::slider(string $label, float $min, float $max, float $step = 0.0, float $default = 0.0) // A numeric slider. Returns a float value.
+FormControl::stepSlider(string $label, array $steps, ?string $default = null) // A discrete slider with string options. Returns a selected step.
+FormControl::toggle(string $label, bool $default = false) // A boolean toggle (checkbox). Returns true/false.
+```
+
+# Menu Available elements
+```php
+Button::simple("§4You're starving! Here's a juicy steak.§r") // One user selectable button with text
+```
 
 ## Summary
 
