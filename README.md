@@ -553,17 +553,19 @@ Forms can retrieve the return value of a generator in the same way, note that in
 >     return ["test" => $this->confirmOnce()];
 > }
 > ```
->  
-> And if you pass `["output" => new ConfirmInputForm()]` into `sendFormAsync()`,   
-> the result will be:  
->  
+>
+> And if you pass `["output" => new ConfirmInputForm()]` into `sendFormAsync()`,  
+> and the generator returned `"yes"` from the `"test"` key,  
+> the result will be:
+>
 > ```php
 > [
 >     "output" => [
->         "test" => "yes"
+>         "test" => "yes" // (← this is the value returned from the generator)
 >     ]
 > ]
 > ```
+>
 >  
 > However, in `sendMenuAsync()`, only the return value of the **selected generator** is returned.  
 > You will either get:  
