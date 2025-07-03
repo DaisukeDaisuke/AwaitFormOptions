@@ -943,6 +943,113 @@ FormControl::toggle(string $label, bool $default = false) // A boolean toggle (c
 Button::simple(string $text) // One user selectable button with text
 ```
 
+## ⚠️ Notes on `getOptions()`
+
+The `getOptions()` method must return an **array of `\Generator` instances**. Each generator represents a step in the asynchronous form process. Misuse of this method may result in exceptions or undefined behavior.
+
+---
+
+### ❌ Mistake 1: Returning non-generators
+
+```php
+// ❌ This will throw an exception because the array is not a list of generators
+public function getOptions(): array {
+    return ["not a generator"];
+}
+```
+
+✅ **Correct:** Ensure each item in the array is a generator using `yield`.  
+
+```php
+public function getOptions(): array {
+    return [
+        $this->confirmSomething()
+    ];
+}
+```
+
+---
+
+### ❌ Mistake 2: Using `yield from` inside `getOptions()`  
+
+```php
+// ❌ Syntax error: you cannot use `yield` or `yield from` in a non-generator method
+public function getOptions(): array {
+    $value = yield from $this->step(); // Invalid
+    return [];
+}
+```
+ 
+✅ **Correct:** Move the logic into a generator method and return it from `getOptions()`.  
+
+```php
+public function flow(): \Generator {
+    $value = yield from $this->step();
+    // ...
+}
+
+public function getOptions(): array {
+    return [$this->flow()];
+}
+```
+
+---
+
+### ❌ Mistake 3: Returning option objects
+
+```php
+// ❌ Nested MenuOptions/FormOptions objects are not allowed
+public function getOptions(): array {
+    return [
+        new SubOptions($this->player),
+        new AnotherSubOptions($this->player)
+    ];
+}
+```
+
+✅ **Correct:** Nesting is not supported. Return only generators.  
+
+---
+
+### ✅ Returning an empty array when no steps are needed  
+
+```php
+public function getOptions(): array {
+    return []; // No form step
+}
+```
+
+---
+
+## ⚠️ All generator methods must start with `$this->request()`
+
+All generator methods returned by `getOptions()` must **begin with** `$this->request(...)`.    
+This is essential for the coroutine to be suspended properly and for `AwaitFormOptions` to track internal state.  
+
+```php
+// ❌ Incorrect: no $this->request() as the first yield
+public function flow(): \Generator {
+    if ($someCondition) {
+        yield from $this->stepA(); // Invalid first yield
+    }
+    yield from $this->request([...]);
+}
+```
+
+✅ **Correct: always begin with `$this->request()`**  
+
+```php
+public function flow(): \Generator {
+    $input = yield from $this->request([...]);
+    if ($input === "A") {
+        yield from $this->stepA();
+    }
+}
+```
+
+Failing to start with `$this->request()` may cause undefined behavior or runtime errors.  
+
+
 ## Summary
 
 ✅ Modular  
