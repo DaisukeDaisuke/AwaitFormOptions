@@ -28,6 +28,10 @@ class RequestResponseBridge{
 	 * @var array<int, array>
 	 */
 	private array $returns = [];
+	/**
+	 * @var array<int, Channel>
+	 */
+	private array $finalizeList = [];
 
 	/**
 	 * クライアントから値を送り、応答を待つ
@@ -113,13 +117,13 @@ class RequestResponseBridge{
 	 * @param array|null $keys
 	 * @return void
 	 */
-	public function all(int $id, array $array,  ?array $keys = []) : void{
-		Await::f2c(function() use ($id, $array, $keys){
+	public function all(int $id, string $owenr, array $array,  ?array $keys = []) : void{
+		Await::f2c(function() use ($owenr, $id, $array, $keys){
 			$return = yield from Await::All($array);
 			if($keys !== null){
-				$this->returns[$id] = array_combine($keys, $return);
+				$this->returns[$id][$owenr] = array_combine($keys, $return);
 			}else{
-				$this->returns[$id] = $return;
+				$this->returns[$id][$owenr] = $return;
 			}
 		});
 	}
@@ -138,11 +142,36 @@ class RequestResponseBridge{
 		});
 	}
 
+	public function one(int $id, string $owenr, \Generator $generator) : void{
+		Await::f2c(function() use ($owenr, $id, $generator){
+			$return = yield from $generator;
+			$this->returns[$id][$owenr] = $return;
+		});
+	}
+
+
+
 	public function count() : int{
 		return count($this->pendingRequest);
 	}
 
 	public function getReturns() : array{
 		return $this->returns;
+	}
+
+	public function finalize(int $priority = 0): \Generator{
+		$obj = new Channel();
+		$this->finalizeList[$priority][] = $obj;
+		yield from $obj->receive();
+	}
+
+	public function tryFinalize(): void{
+		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
+
+		foreach ($this->finalizeList as $group) {
+			foreach ($group as $item) {
+				$item->sendWithoutWait(null);
+			}
+		}
 	}
 }

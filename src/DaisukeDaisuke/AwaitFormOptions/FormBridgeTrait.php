@@ -11,11 +11,36 @@ use InvalidArgumentException;
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
 
+	/**
+	 * @internal
+	 * @param RequestResponseBridge $bridge
+	 * @return void
+	 */
 	public function setBridge(RequestResponseBridge $bridge): void {
 		$this->bridge = $bridge;
 	}
 
 	/**
+	 * @internal
+	 * @return void
+	 */
+	public function dispose() : void{
+		unset($this->bridge);
+	}
+
+	/**
+	 * Wait until all other options are complete
+	 *
+	 * @return \Generator
+	 */
+	public function finalize() : \Generator{
+		yield from $this->bridge->finalize();
+	}
+
+	/**
+	 * Instruct AwaitFormOptions to add an elements
+	 * When this function is awaited, the parent call-tent receives the form response or exception
+	 *
 	 * @param array $value
 	 * @return \Generator
 	 * @throws AwaitFormException
@@ -47,8 +72,6 @@ trait FormBridgeTrait{
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
 			throw new AwaitFromOptionsInvalidValueException($exception->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0);
-		}finally{
-			unset($this->bridge);
 		}
 	}
 }
