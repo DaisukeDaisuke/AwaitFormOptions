@@ -113,13 +113,13 @@ class RequestResponseBridge{
 	 * @param array|null $keys
 	 * @return void
 	 */
-	public function all(int $id, array $array,  ?array $keys = []) : void{
-		Await::f2c(function() use ($id, $array, $keys){
+	public function all(int $id, string $owenr, array $array,  ?array $keys = []) : void{
+		Await::f2c(function() use ($owenr, $id, $array, $keys){
 			$return = yield from Await::All($array);
 			if($keys !== null){
-				$this->returns[$id] = array_combine($keys, $return);
+				$this->returns[$id][$owenr] = array_combine($keys, $return);
 			}else{
-				$this->returns[$id] = $return;
+				$this->returns[$id][$owenr] = $return;
 			}
 		});
 	}
@@ -135,6 +135,13 @@ class RequestResponseBridge{
 		Await::f2c(function() use ($id, $array){
 			[$which, $return] = yield from Await::safeRace($array);
 			$this->returns[$id + $which] = $return;
+		});
+	}
+
+	public function one(int $id, string $owenr, \Generator $generator) : void{
+		Await::f2c(function() use ($owenr, $id, $generator){
+			$return = yield from $generator;
+			$this->returns[$id][$owenr] = $return;
 		});
 	}
 

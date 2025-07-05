@@ -46,19 +46,33 @@ class AwaitFormOptions{
 		Utils::validateArrayValueType($options, static function(FormOptions $value){
 		});
 
-		$options_keys = array_keys($options);
+		$options_keys = [];
 		$counter = 0;
-		foreach($options as $option){
+		$counter2 = 0;
+		foreach($options as $key => $option){
 			$option->setBridge($bridge);
-			$array = $option->getOptions();
+			$forms = $option->getOptions();
 			try{
-				Utils::validateArrayValueType($array, static function(\Generator $value) : void{});
+				Utils::validateArrayValueType($forms, static function(\Generator|FormOptions $value) : void{});
 			}catch(\TypeError){
-				throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator");
+				throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendFromAsync()");
 			}
-			if(count($array) !== 0){
-				$bridge->all($counter++, $array, array_keys($array));
+
+			foreach($forms as $key1 => $item){
+				if($item instanceof FormOptions){
+					$item->setBridge($bridge);
+					$value = $item->getOptions();
+					try{
+						Utils::validateArrayValueType($value, static function(\Generator $value) : void{});
+					}catch(\TypeError){
+						throw new \TypeError($option::class."::getOptions(): Doubly nested form options cannot be expanded");
+					}
+					$bridge->all($counter2, $key1, $value, array_keys($value));
+				}else{
+					$bridge->one($counter2, $key1, $item);
+				}
 			}
+			$options_keys[] = $key;
 		}
 
 
@@ -160,19 +174,37 @@ class AwaitFormOptions{
 
 		$counter = 0;
 		// Bridge注入とオプション構築呼び出し
-		foreach($buttons as $option){
+
+		$flatOptions = [];
+		foreach($buttons as $key1 => $option){
 			$option->setBridge($bridge);
+
 			$array = $option->getOptions();
 			try{
-				Utils::validateArrayValueType($array, static function(\Generator $value) : void{});
+				Utils::validateArrayValueType($array, static function(\Generator|MenuOptions $value) : void{});
 			}catch(\TypeError){
 				throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
 			}
-			if(count($array) !== 0){
-				$bridge->race($counter, $array);
+
+			foreach($array as $key2 => $item){
+				if($item instanceof MenuOptions){
+					$item->setBridge($bridge);
+					$value = $item->getOptions();
+					try{
+						Utils::validateArrayValueType($value, static function(\Generator $value) : void{});
+					}catch(\TypeError){
+						throw new \TypeError($option::class."::getOptions(): Doubly nested form options cannot be expanded");
+					}
+					foreach($value as $sub){
+						$flatOptions[] = $sub;
+					}
+				}else{
+					$flatOptions[] = $item;
+				}
 			}
-			$counter += count($array);
 		}
+
+		$bridge->race(0, $flatOptions);
 
 		// 各 MenuOptions に紐づくボタン群を構築
 		$counter = 0;
