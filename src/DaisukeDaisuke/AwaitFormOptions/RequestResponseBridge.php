@@ -28,6 +28,10 @@ class RequestResponseBridge{
 	 * @var array<int, array>
 	 */
 	private array $returns = [];
+	/**
+	 * @var array<int, Channel>
+	 */
+	private array $finalizeList = [];
 
 	/**
 	 * クライアントから値を送り、応答を待つ
@@ -145,11 +149,29 @@ class RequestResponseBridge{
 		});
 	}
 
+
+
 	public function count() : int{
 		return count($this->pendingRequest);
 	}
 
 	public function getReturns() : array{
 		return $this->returns;
+	}
+
+	public function finalize(int $priority = 0): \Generator{
+		$obj = new Channel();
+		$this->finalizeList[$priority][] = $obj;
+		yield from $obj->receive();
+	}
+
+	public function tryFinalize(): void{
+		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
+
+		foreach ($this->finalizeList as $group) {
+			foreach ($group as $item) {
+				$item->sendWithoutWait(null);
+			}
+		}
 	}
 }
