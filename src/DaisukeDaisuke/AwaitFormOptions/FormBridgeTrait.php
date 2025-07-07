@@ -69,7 +69,7 @@ trait FormBridgeTrait{
 			}
 
 			return yield from $this->bridge->request($value);
-		}catch(InvalidArgumentException|BadFunctionCallException $exception){
+		}catch(InvalidArgumentException|BadFunctionCallException|\TypeError $exception){
 			/**
 			 * @see AwaitFormOptions::sendMenuAsync()
 			 * @see AwaitFormOptions::sendFormAsync()
