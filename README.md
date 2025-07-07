@@ -1058,6 +1058,7 @@ Since version 1.1.0, this is now easy to achieve using nested options!
 > [!TIP]  
 > Nesting is allowed only one level deep.  
 > Nested options are supported in menus as well  
+> Also, the form respects all nested option keys, allowing you to map them accurately  
 
 ### main
 
@@ -1130,16 +1131,15 @@ array(1) {
   array(2) {
     ["entity"]=>
     array(2) {
+      ["a"]=>
+      string(6) "a"
       [0]=>
-      string(1) "1"
-      [1]=>
-      string(1) "2"
+      string(6) "nested"
     }
     ["confirm"]=>
     string(3) "yes"
   }
 }
-
 ```
 
 ## finalize()
