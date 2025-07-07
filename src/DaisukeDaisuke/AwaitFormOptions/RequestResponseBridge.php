@@ -1,36 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DaisukeDaisuke\AwaitFormOptions;
 
-use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\AwaitException;
+use SOFe\AwaitGenerator\Channel;
+use function array_combine;
+use function count;
+use function krsort;
 
 class RequestResponseBridge{
 
 	private int $nextId = 0;
 
-	/**
-	 * @var array<int, Channel> 各リクエストごとの入力チャネル
-	 */
+	/** @var array<int, Channel> 各リクエストごとの入力チャネル */
 	private array $pendingRequest = [];
 
-	/**
-	 * @var array<int, \Closure> 各リクエストに対する応答チャネル
-	 */
+	/** @var array<int, \Closure> 各リクエストに対する応答チャネル */
 	private array $pendingSend = [];
-	/**
-	 * @var array<\Closure>
-	 */
+	/** @var array<\Closure> */
 	private array $rejects = [];
 
-	/**
-	 * @var array<int, array>
-	 */
+	/** @var array<int, array> */
 	private array $returns = [];
-	/**
-	 * @var array<int, Channel>
-	 */
+	/** @var array<int, list<Channel>> */
 	private array $finalizeList = [];
 
 	/**
@@ -67,7 +62,7 @@ class RequestResponseBridge{
 	/**
 	 * 特定のリクエストIDに対して応答を送る
 	 *
-	 * @param int $id 応答先ID
+	 * @param int   $id    応答先ID
 	 * @param mixed $value 応答する値
 	 */
 	public function solve(int $id, mixed $value) : void{
@@ -112,10 +107,7 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * @param int $id
 	 * @param array<\Generator<mixed>> $array
-	 * @param array|null $keys
-	 * @return void
 	 */
 	public function all(int $id, string $owenr, array $array,  ?array $keys = []) : void{
 		Await::f2c(function() use ($owenr, $id, $array, $keys){
@@ -129,10 +121,7 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * @param int $id
-	 * @param int $key
 	 * @param array<\Generator<mixed>> $array
-	 * @return void
 	 * @throws \Throwable
 	 */
 	public function race(int $id, array $array) : void{
@@ -149,8 +138,6 @@ class RequestResponseBridge{
 		});
 	}
 
-
-
 	public function count() : int{
 		return count($this->pendingRequest);
 	}
@@ -159,13 +146,13 @@ class RequestResponseBridge{
 		return $this->returns;
 	}
 
-	public function finalize(int $priority = 0): \Generator{
+	public function finalize(int $priority = 0) : \Generator{
 		$obj = new Channel();
 		$this->finalizeList[$priority][] = $obj;
 		yield from $obj->receive();
 	}
 
-	public function tryFinalize(): void{
+	public function tryFinalize() : void{
 		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
 
 		foreach ($this->finalizeList as $group) {

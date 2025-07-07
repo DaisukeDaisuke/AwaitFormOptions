@@ -1,14 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DaisukeDaisuke\AwaitFormOptions;
 
 use cosmicpe\awaitform\AwaitForm;
-use pocketmine\utils\Utils;
-use pocketmine\player\Player;
-use SOFe\AwaitGenerator\Await;
+use cosmicpe\awaitform\AwaitFormException;
 use cosmicpe\awaitform\Button;
 use pocketmine\form\FormValidationException;
-use cosmicpe\awaitform\AwaitFormException;
+use pocketmine\player\Player;
+use pocketmine\utils\Utils;
+use SOFe\AwaitGenerator\Await;
+use function array_combine;
+use function array_is_list;
+use function array_keys;
+use function array_slice;
+use function array_values;
+use function count;
+use function is_array;
+use function is_object;
+use function is_scalar;
 
 class AwaitFormOptions{
 	final private function __construct(){
@@ -16,11 +27,7 @@ class AwaitFormOptions{
 	}
 
 	/**
-	 * @param Player $player
-	 * @param string $title
 	 * @param array<FormOptions> $options
-	 * @param bool $neverRejects
-	 * @return void
 	 * @throws FormValidationException|AwaitFormException
 	 */
 	public static function sendForm(Player $player, string $title, array $options, bool $neverRejects = false) : void{
@@ -33,12 +40,7 @@ class AwaitFormOptions{
 	}
 
 	/**
-	 * @param Player $player
-	 * @param string $title
 	 * @param array<FormOptions> $options Awaitable form option providers
-	 * @param bool $neverRejects
-	 * @param bool $throwExceptionInCaller
-	 * @return \Generator
 	 * @throws FormValidationException|AwaitFormException
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
@@ -58,7 +60,7 @@ class AwaitFormOptions{
 					Utils::validateArrayValueType($forms, static function(\Generator|FormOptions $value) : void{
 					});
 				}catch(\TypeError){
-					throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendFromAsync()");
+					throw new \TypeError($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendFromAsync()");
 				}
 
 				foreach($forms as $key1 => $item){
@@ -70,7 +72,7 @@ class AwaitFormOptions{
 							Utils::validateArrayValueType($value, static function(\Generator $value) : void{
 							});
 						}catch(\TypeError){
-							throw new \TypeError($option::class."::getOptions(): Doubly nested form options cannot be expanded");
+							throw new \TypeError($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
 						}
 						$bridge->all($counter2, $key1, $value, array_keys($value));
 					}else{
@@ -80,7 +82,6 @@ class AwaitFormOptions{
 				$options_keys[] = $key;
 			}
 
-
 			$counter = 0;
 			$index = [];
 			$options = [];
@@ -88,14 +89,14 @@ class AwaitFormOptions{
 				$keys = [];
 				foreach($array as $key => $item){
 					if(is_array($item)){
-						if(!(array_is_list($item)&&count($item) === 2)){
-							if(array_is_list($item)&&count($item) !== 2){
+						if(!(array_is_list($item) && count($item) === 2)){
+							if(array_is_list($item) && count($item) !== 2){
 								$bridge->reject(
 									$id,
 									new \InvalidArgumentException(
-										"The request value must be a 2-element list array [Button, key], but an array with ".count($item)." element(s) was given. \n".
-										" (key: ".$key."). ".
-										"Ensure that your form returns an array like [Button, SelectedKey]. ".
+										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
+										" (key: " . $key . "). " .
+										"Ensure that your form returns an array like [Button, SelectedKey]. " .
 										"See also: AwaitFormOptions::sendFormAsync()"
 									)
 								);
@@ -106,7 +107,7 @@ class AwaitFormOptions{
 						[$item, $key] = $item;
 					}
 					// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
-					if(!is_scalar($key)||is_object($key)){
+					if(!is_scalar($key) || is_object($key)){
 						//HACK: Making backtraces useful
 						$bridge->reject($id, new \InvalidArgumentException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
 						return [];
@@ -151,12 +152,7 @@ class AwaitFormOptions{
 	}
 
 	/**
-	 * @param Player $player
-	 * @param string $title
-	 * @param string $content
 	 * @param array<MenuOptions> $buttons
-	 * @param bool $neverRejects
-	 * @return void
 	 * @throws FormValidationException|AwaitFormException
 	 */
 	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false) : void{
@@ -169,12 +165,7 @@ class AwaitFormOptions{
 	}
 
 	/**
-	 * @param Player $player
-	 * @param string $title
-	 * @param string $content
 	 * @param array<MenuOptions> $buttons Awaitable menu option providers
-	 * @param bool $neverRejects
-	 * @param bool $throwExceptionInCaller
 	 * @return \Generator<mixed>
 	 * @throws FormValidationException|AwaitFormException|\Throwable
 	 */
@@ -201,7 +192,7 @@ class AwaitFormOptions{
 					Utils::validateArrayValueType($array, static function(\Generator|MenuOptions $value) : void{
 					});
 				}catch(\TypeError){
-					throw new \TypeError($option::class."::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
+					throw new \TypeError($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
 				}
 
 				foreach($array as $key2 => $item){
@@ -213,7 +204,7 @@ class AwaitFormOptions{
 							Utils::validateArrayValueType($value, static function(\Generator $value) : void{
 							});
 						}catch(\TypeError){
-							throw new \TypeError($option::class."::getOptions(): Doubly nested form options cannot be expanded");
+							throw new \TypeError($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
 						}
 						foreach($value as $sub){
 							$flatOptions[] = $sub;
@@ -237,14 +228,14 @@ class AwaitFormOptions{
 				$start = $counter;
 				foreach($array as $key => $item){
 					if(is_array($item)){
-						if(!(array_is_list($item)&&count($item) === 2)){
-							if(array_is_list($item)&&count($item) !== 2){
+						if(!(array_is_list($item) && count($item) === 2)){
+							if(array_is_list($item) && count($item) !== 2){
 								$bridge->reject(
 									$id,
 									new \InvalidArgumentException(
-										"The request value must be a 2-element list array [Button, key], but an array with ".count($item)." element(s) was given. \n".
-										" (key: ".$key."). ".
-										"Ensure that your form returns an array like [Button, SelectedKey]. ".
+										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
+										" (key: " . $key . "). " .
+										"Ensure that your form returns an array like [Button, SelectedKey]. " .
 										"See also: AwaitFormOptions::sendMenuAsync()"
 									)
 								);
@@ -271,7 +262,7 @@ class AwaitFormOptions{
 
 				// 選択されたボタンがどの範囲に属するか判定
 				foreach($index as $id => [$start, $end, $keys]){
-					if($selected >= $start&&$selected <= $end){
+					if($selected >= $start && $selected <= $end){
 						$keyIndex = $selected - $start;
 						$key = $keys[$keyIndex] ?? null;
 
