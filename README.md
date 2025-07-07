@@ -1179,3 +1179,42 @@ class ConfirmInputForm extends FormOptions{
 	}
 }
 ```
+
+## RaceLostException
+Due to the processing improvements in 1.1.0, all awaitformoption menus now receive RaceLostException equally
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+use SOFe\AwaitGenerator\RaceLostException;
+
+class HpBasedFoodOptions extends MenuOptions{
+
+	public function giveRawFish() : \Generator{
+		try{
+			yield from $this->request([Button::simple("a"), 0]);
+		}catch(RaceLostException){
+			var_dump("!!");
+		}
+	}
+
+	public function giveRawFish1() : \Generator{
+		try{
+			yield from $this->request([Button::simple("a"), 0]);
+		}catch(RaceLostException){
+			var_dump("??");
+		}
+	}
+
+	public function getOptions() : array{
+		return [
+			$this->giveRawFish(),
+			$this->giveRawFish1(),
+		];
+	}
+}
+```
