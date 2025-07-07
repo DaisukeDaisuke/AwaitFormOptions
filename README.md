@@ -81,11 +81,11 @@ Each option will yield from `$this->request($form);` and wait for the response. 
 
 > [!TIP]
 > `yield from $this->request()` must be called only once per generator.  
-> Calling it a second time in the same generator will throw a `BadFunctionCallException`.  
+> Calling it a second time in the same generator will throw a `AwaitFormOptionsInvalidValueException`.  
 > If you need to re-show a form, return from the current generator and call it again from the parent context.
 >
 > Additionally, the following exceptions may be thrown from `request()`:
-> - `BadFunctionCallException`: When `request()` is called more than once in the same generator.
+> - `AwaitFormOptionsInvalidValueException`: When `request()` is called more than once in the same generator.
 > - `AwaitFormOptionsInvalidValueException`: When the provided form/button array is invalid.
 > - `AwaitFormException`: If the player rejects the form, input is invalid, or the player logs out.
 

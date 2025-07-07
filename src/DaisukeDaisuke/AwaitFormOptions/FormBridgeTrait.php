@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DaisukeDaisuke\AwaitFormOptions;
 
+use BadFunctionCallException;
 use cosmicpe\awaitform\AwaitFormException;
 use cosmicpe\awaitform\Button;
 use cosmicpe\awaitform\FormControl;
@@ -14,7 +15,6 @@ use function array_key_last;
 use function count;
 use function debug_backtrace;
 use const DEBUG_BACKTRACE_IGNORE_ARGS;
-use BadFunctionCallException;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
@@ -50,8 +50,8 @@ trait FormBridgeTrait{
 	public function request(array $value) : \Generator{
 		$missed = false;
 		if(count($value) === 2){
-			if($value[array_key_first($value)] instanceof FormControl||$value[array_key_first($value)] instanceof Button){
-				if(!$value[array_key_last($value)] instanceof FormControl&&!$value[array_key_last($value)] instanceof Button){
+			if($value[array_key_first($value)] instanceof FormControl || $value[array_key_first($value)] instanceof Button){
+				if(!$value[array_key_last($value)] instanceof FormControl && !$value[array_key_last($value)] instanceof Button){
 					$missed = true;
 				}
 			}
@@ -76,7 +76,7 @@ trait FormBridgeTrait{
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-			throw new AwaitFormOptionsInvalidValueException($exception->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0);
+			throw new AwaitFormOptionsInvalidValueException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
 		}finally{
 			$this->requested = true;
 		}
