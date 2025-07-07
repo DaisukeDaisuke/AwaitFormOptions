@@ -1059,6 +1059,7 @@ Since version 1.1.0, this is now easy to achieve using nested options!
 
 > [!TIP]  
 > Nesting is allowed only one level deep.
+> Nested options are supported in menus as well
 
 ### main
 
@@ -1150,7 +1151,8 @@ As of version 1.1.0, you can use `yield from $this->finalize(int priority);`!
 This allows your code block to pause until all other forms are either completed, finalized, or in an awaiting state—after which execution resumes!  
   
 > [!TIP]  
-> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**.
+> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**
+> Although finalization is supported by menu as well, there is no point in calling it
 
 
 ### ConfirmInputForm
@@ -1179,15 +1181,3 @@ class ConfirmInputForm extends FormOptions{
 	}
 }
 ```
-
-
-
-## Summary
-
-✅ Modular  
-✅ Async  
-✅ Clean separation of form logic  
-✅ Handles multiple options, cancellations, and reuse easily
-
-> Build dynamic, plugin-ready forms with AwaitFormOptions.
-

@@ -148,6 +148,7 @@ class AwaitFormOptions{
 			foreach($needDispose as $item){
 				$item->dispose();
 			}
+			unset($bridge);
 		}
 	}
 
@@ -288,6 +289,7 @@ class AwaitFormOptions{
 			foreach($needDispose as $item){
 				$item->dispose();
 			}
+			unset($bridge);
 		}
 	}
 }
