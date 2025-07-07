@@ -50,7 +50,7 @@ https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8
 
 ## Solution: AwaitFormOptions
 
-Split your form logic into reusable, testable option classes:  
+Split your form logic into reusable option classes:  
 
 ```php
 public function a(PlayerItemUseEvent $event) : void{
