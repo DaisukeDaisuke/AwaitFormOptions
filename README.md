@@ -269,8 +269,8 @@ AwaitFormOptions also supports `menu` interactions.
 Unselected menu options are discarded and not executed.  
 
 > [!TIP]
-> When the form is completed, any button generators that were not selected will equally receive a `SOFe\AwaitGenerator\RaceLostException` (since 1.1.0)
-> RaceLostException is only raised when the form is completed, and if the form is rejected you will receive an AwaitFormException depending on neverRejects
+> When the form is completed, any button generators that were not selected will equally receive a `SOFe\AwaitGenerator\RaceLostException` (since 1.1.0)  
+> RaceLostException is only raised when the form is completed, and if the form is rejected you will receive an AwaitFormException depending on neverRejects  
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
