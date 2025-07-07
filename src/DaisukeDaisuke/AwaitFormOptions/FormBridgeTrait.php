@@ -17,6 +17,7 @@ use const DEBUG_BACKTRACE_IGNORE_ARGS;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
+	private bool $requested = false;
 
 	/**
 	 * @internal
@@ -59,9 +60,10 @@ trait FormBridgeTrait{
 		}
 
 		Utils::validateArrayValueType($value, static function(FormControl|Button|array $value){});
-		if(!isset($this->bridge)){
-			throw new \BadFunctionCallException("bridge is not set, Maybe you called \$this->request() twice?");
+		if($this->requested){
+			throw new \BadFunctionCallException("Maybe you called \$this->request() twice? This is not allowed to prevent deadlocks");
 		}
+		$this->requested = true;
 		try{
 			return yield from $this->bridge->request($value);
 		}catch(InvalidArgumentException $exception){
