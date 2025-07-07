@@ -43,7 +43,7 @@ trait FormBridgeTrait{
 
 	/**
 	 * Instruct AwaitFormOptions to add an elements
-	 * When this function is awaited, the parent call-tent receives the form response or exception
+	 * When this function is awaited, the parent coroutines receives the form response or exception
 	 *
 	 * @throws AwaitFormException
 	 */
