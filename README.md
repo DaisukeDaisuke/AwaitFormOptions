@@ -995,19 +995,18 @@ public function getOptions(): array {
 
 ---
 
-### ❌ Mistake 3: Returning option objects
+### ❌ Mistake 3: Returning objects
 
 ```php
-// ❌ Nested MenuOptions/FormOptions objects are not allowed
+// ❌ Unrelated objects are not supported
 public function getOptions(): array {
     return [
-        new SubOptions($this->player),
-        new AnotherSubOptions($this->player)
+        new \stdClass($this->player),
     ];
 }
 ```
 
-✅ **Correct:** Nesting is not supported. Return only generators.  
+✅ **Correct:** Returns a generator or form option, or a menu object (form and menu options cannot be mixed)
 
 ---
 
