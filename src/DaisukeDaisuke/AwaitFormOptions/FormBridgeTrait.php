@@ -73,7 +73,7 @@ trait FormBridgeTrait{
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-			throw new AwaitFromOptionsInvalidValueException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
+			throw new AwaitFormOptionsInvalidValueException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
 		}
 	}
 }
