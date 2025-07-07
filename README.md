@@ -1049,13 +1049,135 @@ public function flow(): \Generator {
 
 Failing to start with `$this->request()` may cause undefined behavior or runtime errors.  
 
+# 1.1.0 Futures
 
-## Summary
+## Nested Options
 
-✅ Modular  
-✅ Async  
-✅ Clean separation of form logic  
-✅ Handles multiple options, cancellations, and reuse easily
+What should I do if I'm using object-oriented design, and I want to add elements but can't access the parent class?
 
-> Build dynamic, plugin-ready forms with AwaitFormOptions.
+Since version 1.1.0, this is now easy to achieve using nested options!
 
+> [!TIP]  
+> Nesting is allowed only one level deep.
+> Nested options are supported in menus as well
+
+### main
+
+```php
+	public function onUse(PlayerItemUseEvent $event) : void{
+		$player = $event->getPlayer();
+		if(!$player->isSneaking()){
+			return;
+		}
+		Await::f2c(function() use ($player){
+			while(true){
+				try{
+					$result = yield from AwaitFormOptions::sendFormAsync(
+						player: $player,
+						title: "Confirmation",
+						options: ["output" => new ConfirmInputForm()],
+						neverRejects: true,
+						throwExceptionInCaller: true
+					);
+					var_dump($result);
+					//generator returns
+					$typed = $result["output"]["confirm"];
+					if(strtolower(trim($typed)) === "yes"){
+						$player->sendToastNotification("Confirmed", "Thanks for typing!");
+						break;
+					}
+
+				}catch(AwaitFormException $exception){
+					if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
+						break;
+					}
+				}
+				$player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
+			}
+		});
+	}
+```
+
+### ConfirmInputForm
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\FormOptions;
+use cosmicpe\awaitform\FormControl;
+
+class ConfirmInputForm extends FormOptions{
+	public function confirmOnce(): \Generator {
+		[$input] = yield from $this->request([
+			FormControl::input("Type 'yes' to confirm", "yes", ""),
+		]);
+		return $input;
+	}
+
+	public function getOptions(): array {
+		return [
+			"entity" => new SimpleInput("nested!", "nested", "nested", 0),
+			"confirm" => $this->confirmOnce(),
+		];
+	}
+}
+```
+
+### output
+
+```php
+array(1) {
+  ["output"]=>
+  array(2) {
+    ["entity"]=>
+    array(2) {
+      [0]=>
+      string(1) "1"
+      [1]=>
+      string(1) "2"
+    }
+    ["confirm"]=>
+    string(3) "yes"
+  }
+}
+
+```
+
+## finalize()
+
+How can you collect information from nested forms **after all forms have completed**?  
+As of version 1.1.0, you can use `yield from $this->finalize(int priority);`!  
+This allows your code block to pause until all other forms are either completed, finalized, or in an awaiting state—after which execution resumes!  
+  
+> [!TIP]  
+> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**
+> Although finalization is supported by menu as well, there is no point in calling it
+
+
+### ConfirmInputForm
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use DaisukeDaisuke\AwaitFormOptions\FormOptions;
+use cosmicpe\awaitform\FormControl;
+
+class ConfirmInputForm extends FormOptions{
+	public function confirmOnce(): \Generator {
+		[$input] = yield from $this->request([
+			FormControl::input("Type 'yes' to confirm", "yes", ""),
+		]);
+		yield from $this->finalize(10000);//Awaiting other generators with priority 10000
+		return $input;
+	}
+
+	public function getOptions(): array {
+		return [
+			"entity" => new SimpleInput("nested!", "nested", "nested", 0),
+			"confirm" => $this->confirmOnce(),
+		];
+	}
+}
+```

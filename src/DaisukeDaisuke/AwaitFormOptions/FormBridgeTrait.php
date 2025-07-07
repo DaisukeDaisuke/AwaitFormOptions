@@ -1,23 +1,48 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DaisukeDaisuke\AwaitFormOptions;
 
-use pocketmine\utils\Utils;
-use cosmicpe\awaitform\FormControl;
-use cosmicpe\awaitform\Button;
 use cosmicpe\awaitform\AwaitFormException;
+use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\FormControl;
 use InvalidArgumentException;
+use pocketmine\utils\Utils;
+use function array_key_first;
+use function array_key_last;
+use function count;
+use function debug_backtrace;
+use const DEBUG_BACKTRACE_IGNORE_ARGS;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
 
-	public function setBridge(RequestResponseBridge $bridge): void {
+	/**
+	 * @internal
+	 */
+	public function setBridge(RequestResponseBridge $bridge) : void {
 		$this->bridge = $bridge;
 	}
 
 	/**
-	 * @param array $value
-	 * @return \Generator
+	 * @internal
+	 */
+	public function dispose() : void{
+		unset($this->bridge);
+	}
+
+	/**
+	 * Wait until all other options are complete
+	 */
+	public function finalize() : \Generator{
+		yield from $this->bridge->finalize();
+	}
+
+	/**
+	 * Instruct AwaitFormOptions to add an elements
+	 * When this function is awaited, the parent call-tent receives the form response or exception
+	 *
 	 * @throws AwaitFormException
 	 */
 	public function request(array $value) : \Generator{
@@ -46,9 +71,7 @@ trait FormBridgeTrait{
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-			throw new AwaitFromOptionsInvalidValueException($exception->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0);
-		}finally{
-			unset($this->bridge);
+			throw new AwaitFromOptionsInvalidValueException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
 		}
 	}
 }
