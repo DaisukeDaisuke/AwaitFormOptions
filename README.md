@@ -1151,7 +1151,7 @@ This allows your code block to pause until all other forms are either completed,
 > [!TIP]  
 > Lower numbers mean **lower priority**, and higher numbers mean **higher priority**   
 > Although finalization is supported by menu as well, there is no point in calling it    
-
+> However, in the form menu, if the option does nothing, you can also call this as a fake function
 
 ### ConfirmInputForm
 ```php
