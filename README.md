@@ -1149,8 +1149,8 @@ As of version 1.1.0, you can use `yield from $this->finalize(int priority);`!
 This allows your code block to pause until all other forms are either completed, finalized, or in an awaiting state—after which execution resumes!  
   
 > [!TIP]  
-> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**  
-> Although finalization is supported by menu as well, there is no point in calling it  
+> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**   
+> Although finalization is supported by menu as well, there is no point in calling it    
 
 
 ### ConfirmInputForm
