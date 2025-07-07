@@ -1050,16 +1050,14 @@ public function flow(): \Generator {
 Failing to start with `$this->request()` may cause undefined behavior or runtime errors.  
 
 # 1.1.0 Futures
-
 ## Nested Options
 
 What should I do if I'm using object-oriented design, and I want to add elements but can't access the parent class?
-
 Since version 1.1.0, this is now easy to achieve using nested options!
 
 > [!TIP]  
-> Nesting is allowed only one level deep.
-> Nested options are supported in menus as well
+> Nesting is allowed only one level deep.  
+> Nested options are supported in menus as well  
 
 ### main
 
@@ -1151,8 +1149,8 @@ As of version 1.1.0, you can use `yield from $this->finalize(int priority);`!
 This allows your code block to pause until all other forms are either completed, finalized, or in an awaiting state—after which execution resumes!  
   
 > [!TIP]  
-> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**
-> Although finalization is supported by menu as well, there is no point in calling it
+> Lower numbers mean **lower priority**, and higher numbers mean **higher priority**  
+> Although finalization is supported by menu as well, there is no point in calling it  
 
 
 ### ConfirmInputForm
