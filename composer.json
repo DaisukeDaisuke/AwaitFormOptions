@@ -2,7 +2,7 @@
     "name": "daisukedaisuke/awaitformoptions",
     "type": "library",
     "require": {
-        "cosmicpe/awaitform": "^0.0.1",
+        "cosmicpe/awaitform": "^0.0.2",
         "sof3/await-generator": "^3.6"
     },
     "autoload": {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b2143c8bb53482505e3ac3cbc3585d90",
+    "content-hash": "26fb9f37835c1b1ca23552e3d86332fd",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -127,16 +127,16 @@
         },
         {
             "name": "cosmicpe/awaitform",
-            "version": "v0.0.1",
+            "version": "v0.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Cosmoverse/AwaitForm.git",
-                "reference": "9f993aa3312861d13e79306b0d095f8cd419d557"
+                "reference": "de78a476eb416dde4050fd07088fc7348062ba78"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Cosmoverse/AwaitForm/zipball/9f993aa3312861d13e79306b0d095f8cd419d557",
-                "reference": "9f993aa3312861d13e79306b0d095f8cd419d557",
+                "url": "https://api.github.com/repos/Cosmoverse/AwaitForm/zipball/de78a476eb416dde4050fd07088fc7348062ba78",
+                "reference": "de78a476eb416dde4050fd07088fc7348062ba78",
                 "shasum": ""
             },
             "require": {
@@ -169,9 +169,9 @@
             "description": "Write clean form navigation flows in PocketMine-MP using async/await pattern",
             "support": {
                 "issues": "https://github.com/Cosmoverse/AwaitForm/issues",
-                "source": "https://github.com/Cosmoverse/AwaitForm/tree/v0.0.1"
+                "source": "https://github.com/Cosmoverse/AwaitForm/tree/v0.0.2"
             },
-            "time": "2025-02-22T09:41:51+00:00"
+            "time": "2025-06-24T05:19:34+00:00"
         },
         {
             "name": "netresearch/jsonmapper",
