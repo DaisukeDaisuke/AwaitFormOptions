@@ -14,7 +14,7 @@ Designed to modularize complex user interactions and support clean, reusable, as
 > If you want to use AwaitFormOptions, put this somewhere in your plugin:
 > ```php
 > if(!AwaitForm::isRegistered()){
->     AwaitForm::register($this);
+>     AwaitForm::register($this); //$this must extend pluginbase
 > }
 > ```
 
