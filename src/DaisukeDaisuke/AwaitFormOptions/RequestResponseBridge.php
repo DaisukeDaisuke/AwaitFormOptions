@@ -109,7 +109,7 @@ class RequestResponseBridge{
 	/**
 	 * @param array<\Generator<mixed>> $array
 	 */
-	public function all(int $id, string $owenr, array $array,  ?array $keys = []) : void{
+	public function all(int $id, int|string $owenr, array $array,  ?array $keys = []) : void{
 		Await::f2c(function() use ($owenr, $id, $array, $keys){
 			$return = yield from Await::All($array);
 			if($keys !== null){
@@ -131,7 +131,7 @@ class RequestResponseBridge{
 		});
 	}
 
-	public function one(int $id, string $owenr, \Generator $generator) : void{
+	public function one(int $id, int|string $owenr, \Generator $generator) : void{
 		Await::f2c(function() use ($owenr, $id, $generator){
 			$return = yield from $generator;
 			$this->returns[$id][$owenr] = $return;

@@ -51,7 +51,6 @@ class AwaitFormOptions{
 		try{
 			$options_keys = [];
 			$counter = 0;
-			$counter2 = 0;
 			foreach($options as $key => $option){
 				$needDispose[] = $option;
 				$option->setBridge($bridge);
@@ -74,12 +73,13 @@ class AwaitFormOptions{
 						}catch(\TypeError){
 							throw new \TypeError($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
 						}
-						$bridge->all($counter2, $key1, $value, array_keys($value));
+						$bridge->all($counter, $key1, $value, array_keys($value));
 					}else{
-						$bridge->one($counter2, $key1, $item);
+						$bridge->one($counter, $key1, $item);
 					}
 				}
 				$options_keys[] = $key;
+				$counter++;
 			}
 
 			$counter = 0;
@@ -130,6 +130,7 @@ class AwaitFormOptions{
 
 				$bridge->tryFinalize();
 
+				var_dump($options_keys, $bridge->getReturns());
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
 				if(!$neverRejects){
