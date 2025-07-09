@@ -130,7 +130,6 @@ class AwaitFormOptions{
 
 				$bridge->tryFinalize();
 
-				var_dump($options_keys, $bridge->getReturns());
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
 				if(!$neverRejects){
