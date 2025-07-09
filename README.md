@@ -10,6 +10,15 @@ Designed to modularize complex user interactions and support clean, reusable, as
 - [Cosmoverse/AwaitForm](https://github.com/Cosmoverse/AwaitForm)
 - [SOF3/await-generator](https://github.com/SOF3/await-generator)
 
+> [!IMPORTANT]
+> `IMPORTANT` の例
+> If you want to use AwaitFormOptions, put this somewhere in your plugin:
+> ```php
+> if(!AwaitForm::isRegistered()){
+>     AwaitForm::register($this);
+> }
+> ```
+
 ---
 
 ## Why?
