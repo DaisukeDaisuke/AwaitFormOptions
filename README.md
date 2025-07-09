@@ -26,10 +26,11 @@ Designed to modularize complex user interactions and support clean, reusable, as
 ---
 
 ## ⚠️ Performance Notice
+Please be advised that AwaitFormOptions is inherently demanding, both in terms of function call overhead and PHP's garbage collection behavior.  
+Due to its layered design and dynamic generator usage, it may not be suitable for performance-critical paths or tight loops   
+If maximum performance is your goal, we strongly recommend using AwaitForm directly, rather than through this abstraction layer.    
+AwaitFormOptions is designed to simplify complex form workflows and improve developer ergonomics—not to optimize execution speed.   
 
-Please be advised that AwaitFormOptions is inherently demanding, both in terms of function call overhead and PHP's garbage collection behavior. Due to its layered design and dynamic generator usage, it may not be suitable for performance-critical paths or tight loops.  
-🛑 If maximum performance is your goal, we strongly recommend using AwaitForm directly, rather than through this abstraction layer.  
-AwaitFormOptions is designed to simplify complex form workflows and improve developer ergonomics—not to optimize execution speed.  
 ---
 
 ## Why?
