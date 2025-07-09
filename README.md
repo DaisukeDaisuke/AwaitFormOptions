@@ -11,7 +11,6 @@ Designed to modularize complex user interactions and support clean, reusable, as
 - [SOF3/await-generator](https://github.com/SOF3/await-generator)
 
 > [!IMPORTANT]
-> `IMPORTANT` の例
 > If you want to use AwaitFormOptions, put this somewhere in your plugin:
 > ```php
 > if(!AwaitForm::isRegistered()){
