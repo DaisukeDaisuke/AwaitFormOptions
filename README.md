@@ -17,6 +17,9 @@ Designed to modularize complex user interactions and support clean, reusable, as
 >     AwaitForm::register($this); //$this must extend pluginbase
 > }
 > ```
+> ```php
+> use cosmicpe\awaitform\AwaitForm;
+> ```
 
 ---
 
