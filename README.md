@@ -1063,6 +1063,12 @@ public function flow(): \Generator {
 
 Failing to start with `$this->request()` may cause undefined behavior or runtime errors.  
 
+## ❓ How can I preserve the state of a form?
+Currently, this is a known limitation and an ongoing area of exploration. In the core-sod architecture, all input states are managed and validated through a flat, object-oriented structure. Each form field's value is stored in a persistent object that represents the current session.  
+🧩 In principle, such an object should be sufficient to retain or finalize form state across multiple steps or deferred interactions.  
+However, please note that we do not plan to fully solve this problem in the near future. The current approach is intended to be minimal, avoiding deep form serialization or complex state tracking, in order to keep the system maintainable and predictable.  
+While improvements may be considered in the future, this area is not a development priority at the moment.  
+  
 # 1.1.0 Futures
 ## Nested Options
 
