@@ -23,21 +23,21 @@ trait FormBridgeTrait{
 	/**
 	 * @internal
 	 */
-	public function setBridge(RequestResponseBridge $bridge) : void{
+	final public function setBridge(RequestResponseBridge $bridge) : void{
 		$this->bridge = $bridge;
 	}
 
 	/**
 	 * @internal
 	 */
-	public function dispose() : void{
+	final public function dispose() : void{
 		unset($this->bridge);
 	}
 
 	/**
 	 * Wait until all other options are complete
 	 */
-	public function finalize() : \Generator{
+	final public function finalize() : \Generator{
 		yield from $this->bridge->finalize();
 	}
 
@@ -47,11 +47,11 @@ trait FormBridgeTrait{
 	 *
 	 * @throws AwaitFormException
 	 */
-	public function request(array $value) : \Generator{
+	final public function request(array $value) : \Generator{
 		$missed = false;
 		if(count($value) === 2){
-			if($value[array_key_first($value)] instanceof FormControl || $value[array_key_first($value)] instanceof Button){
-				if(!$value[array_key_last($value)] instanceof FormControl && !$value[array_key_last($value)] instanceof Button){
+			if($value[array_key_first($value)] instanceof FormControl||$value[array_key_first($value)] instanceof Button){
+				if(!$value[array_key_last($value)] instanceof FormControl&&!$value[array_key_last($value)] instanceof Button){
 					$missed = true;
 				}
 			}
@@ -76,7 +76,7 @@ trait FormBridgeTrait{
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-			throw new AwaitFormOptionsInvalidValueException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
+			throw new AwaitFormOptionsInvalidValueException($exception->getMessage()." in ".($dbg[0]['file'] ?? "null")."(".($dbg[0]['line'] ?? "null")."): ".($dbg[0]['class'] ?? "null")."->".($dbg[0]['function'] ?? "null")."()", 0);
 		}finally{
 			$this->requested = true;
 		}
