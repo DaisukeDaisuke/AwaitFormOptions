@@ -2,6 +2,7 @@
     "name": "daisukedaisuke/awaitformoptions",
     "type": "library",
     "require": {
+        "php": ">=8.2",
         "cosmicpe/awaitform": "^0.0.3",
         "sof3/await-generator": "^3.6"
     },

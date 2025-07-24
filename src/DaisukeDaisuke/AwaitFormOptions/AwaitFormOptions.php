@@ -150,6 +150,7 @@ class AwaitFormOptions{
 			}
 			unset($bridge);
 		}
+		//This code path should be unreachable
 	}
 
 	/**
