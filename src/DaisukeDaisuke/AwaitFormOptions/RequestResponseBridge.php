@@ -49,6 +49,7 @@ class RequestResponseBridge{
 			$this->pendingSend[$id] = $resolve;
 			$this->rejects[$id] = $reject;
 
+			//Resolve reserve
 			if($reserved !== null && isset($this->reserves[$reserved])){
 				$this->reserves[$reserved]->sendWithoutWait($id);
 				unset($this->reserves[$reserved]);
