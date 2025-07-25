@@ -15,6 +15,8 @@ class RequestResponseBridge{
 
 	private int $nextId = 0;
 
+	private int $reservesId = 0;
+
 	/** @var array<int, Channel> 各リクエストごとの入力チャネル */
 	private array $pendingRequest = [];
 
@@ -27,15 +29,23 @@ class RequestResponseBridge{
 	private array $returns = [];
 	/** @var array<int, list<Channel>> */
 	private array $finalizeList = [];
+	/** @var list<Channel> */
+	private array $reserves = [];
 
 	/**
 	 * クライアントから値を送り、応答を待つ
 	 *
 	 * @param mixed $value 要求する値
+	 * @param ?int $reserved 予約id
 	 * @return \Generator<mixed> 応答値
 	 */
-	public function request(mixed $value) : \Generator{
+	public function request(mixed $value, int $reserved = null) : \Generator{
 		$id = $this->nextId++;
+
+		if($reserved !== null && isset($this->reserves[$reserved])){
+			$this->reserves[$reserved]->sendWithoutWait($id);
+			unset($this->reserves[$reserved]);
+		}
 
 		$this->pendingRequest[$id] = new Channel();
 		$this->pendingRequest[$id]->sendWithoutWait($value);
@@ -46,6 +56,17 @@ class RequestResponseBridge{
 	}
 
 	/**
+	 * 将来のrequestを予約する。
+	 *
+	 * @return int
+	 */
+	public function schedule() : int{
+		$id = $this->reservesId++;
+		$this->reserves[$id] = new Channel();
+		return $id;
+	}
+
+	/**
 	 * 要求を全て取得する。要求が未完の場合はそれまで待つ
 	 * もしrequestが中途半端だった場合デットロックする
 	 *
@@ -53,6 +74,12 @@ class RequestResponseBridge{
 	 */
 	public function getAllExpected() : \Generator{
 		$result = [];
+
+		//予約を待つ
+		foreach($this->reserves as $reserve){
+			yield from $reserve->receive();
+		}
+
 		foreach($this->pendingRequest as $id => $channel){
 			$result[$id] = yield from $channel->receive();
 		}

@@ -19,6 +19,7 @@ use const DEBUG_BACKTRACE_IGNORE_ARGS;
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
 	private bool $requested = false;
+	private ?int $reservesId = null;
 
 	/**
 	 * @internal
@@ -31,7 +32,7 @@ trait FormBridgeTrait{
 	 * @internal
 	 */
 	final public function dispose() : void{
-		unset($this->bridge);
+		unset($this->bridge, $this->reservesId);
 	}
 
 	/**
@@ -39,6 +40,17 @@ trait FormBridgeTrait{
 	 */
 	final public function finalize() : \Generator{
 		yield from $this->bridge->finalize();
+	}
+
+	/**
+	 * Form submissions will be temporarily suspended until all bookings are resolved
+	 * If you don't call request(), the coroutine will be deadlocked forever, so be sure to call it
+	 */
+	final public function schedule() : void{
+		if($this->reservesId !== null){
+			throw new BadFunctionCallException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks");
+		}
+		$this->reservesId = $this->bridge->schedule();
 	}
 
 	/**
@@ -68,7 +80,7 @@ trait FormBridgeTrait{
 				throw new BadFunctionCallException("Maybe you called \$this->request() twice? This is not allowed to prevent deadlocks");
 			}
 
-			return yield from $this->bridge->request($value);
+			return yield from $this->bridge->request($value, $this->reservesId);
 		}catch(InvalidArgumentException|BadFunctionCallException|\TypeError $exception){
 			/**
 			 * @see AwaitFormOptions::sendMenuAsync()

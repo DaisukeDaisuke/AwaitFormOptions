@@ -1248,3 +1248,35 @@ class HpBasedFoodOptions extends MenuOptions{
 	}
 }
 ```
+
+## 1.3.0 Future
+## schedule
+Want to use some await before sending a request? Now you can with schedule() in 1.3.0!  
+
+```php
+<?php
+
+namespace daisukedaisuke\test;
+
+use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+use SOFe\AwaitGenerator\RaceLostException;
+
+class HpBasedFoodOptions extends MenuOptions{
+	public function giveRawFish1() : \Generator{
+	    $this->schedule(); // This ensures that the awaitformoptions coroutine is temporarily suspended
+	    //A few awaits
+		try{
+			yield from $this->request([Button::simple("a"), 0]); // Here, the suspension is lifted
+		}catch(RaceLostException){
+			var_dump("??");
+		}
+	}
+
+	public function getOptions() : array{
+		return [
+			$this->giveRawFish1(),
+		];
+	}
+}
+```
