@@ -42,16 +42,17 @@ class RequestResponseBridge{
 	public function request(mixed $value, int $reserved = null) : \Generator{
 		$id = $this->nextId++;
 
-		if($reserved !== null && isset($this->reserves[$reserved])){
-			$this->reserves[$reserved]->sendWithoutWait($id);
-			unset($this->reserves[$reserved]);
-		}
-
 		$this->pendingRequest[$id] = new Channel();
 		$this->pendingRequest[$id]->sendWithoutWait($value);
-		return yield from Await::promise(function(\Closure $resolve, \Closure $reject) use ($id){
+
+		return yield from Await::promise(function(\Closure $resolve, \Closure $reject) use ($reserved, $id){
 			$this->pendingSend[$id] = $resolve;
 			$this->rejects[$id] = $reject;
+
+			if($reserved !== null && isset($this->reserves[$reserved])){
+				$this->reserves[$reserved]->sendWithoutWait($id);
+				unset($this->reserves[$reserved]);
+			}
 		});
 	}
 
