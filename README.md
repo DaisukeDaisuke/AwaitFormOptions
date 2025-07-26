@@ -1005,11 +1005,10 @@ public function getOptions(): array {
 }
 ```
  
-✅ **Correct:** Move the logic into a generator method and return it from `getOptions()`, or use schedule() to tell the system that your generator intends to request() in the future.  
+✅ **Correct:** Move the logic into a generator method and return it from `getOptions()`
 
 ```php
 public function flow(): \Generator {
-    $this->schedule(); // In the future, tell the system to wait until the request is executed
     $value = yield from $this->step();
     // ...
 }
@@ -1048,8 +1047,7 @@ public function getOptions(): array {
 
 ## ⚠️ All generator methods must start with `$this->request()`
 
-All generator methods returned by `getOptions()` must **begin with** `$this->request(...)`.    
-This is essential for the coroutine to be suspended properly and for `AwaitFormOptions` to track internal state.  
+use schedule() to tell the system that your generator intends to request() in the future
 
 ```php
 // ❌ Incorrect: no $this->request() as the first yield
@@ -1065,10 +1063,11 @@ public function flow(): \Generator {
 
 ```php
 public function flow(): \Generator {
-    $input = yield from $this->request([...]);
+    $this->schedule(); // In the future, tell the system to wait until the request is executed
     if ($input === "A") {
         yield from $this->stepA();
     }
+    $input = yield from $this->request([...]);
 }
 ```
 
