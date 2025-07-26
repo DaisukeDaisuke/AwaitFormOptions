@@ -1061,7 +1061,7 @@ public function flow(): \Generator {
 }
 ```
 
-✅ **Correct: If you think you might call await several times in advance, use `$this->schedule();` beforehand
+✅ Correct: If you think you might call await several times in advance, use `$this->schedule();` beforehand
 
 ```php
 public function flow(): \Generator {
