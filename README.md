@@ -1005,10 +1005,11 @@ public function getOptions(): array {
 }
 ```
  
-✅ **Correct:** Move the logic into a generator method and return it from `getOptions()`.  
+✅ **Correct:** Move the logic into a generator method and return it from `getOptions()`, or use schedule() to tell the system that your generator intends to request() in the future.  
 
 ```php
 public function flow(): \Generator {
+    $this->schedule(); // In the future, tell the system to wait until the request is executed
     $value = yield from $this->step();
     // ...
 }
@@ -1079,6 +1080,12 @@ Currently, this is a known limitation and an ongoing area of exploration. In the
 However, please note that we do not plan to fully solve this problem in the near future. The current approach is intended to be minimal, avoiding deep form serialization or complex state tracking, in order to keep the system maintainable and predictable.  
 While improvements may be considered in the future, this area is not a development priority at the moment.  
   
+
+## ❓How about PMServerUI?
+PMServerUI (https://github.com/DavyCraft648/PMServerUI) is a great library for beginners who want to create simple and clean UI menus with minimal effort. Its straightforward API makes it easy to build forms quickly.  
+However, AwaitFormOptions provides a more powerful and flexible system that supports deeply nested options, persistent context between form steps, and asynchronous flow control.  
+While it is technically possible to recreate something like PMServerUI using AwaitFormOptions, the reverse is not true. PMServerUI cannot handle advanced patterns such as dynamic generator-based form logic, branching flows, or contextual state within multi-step UIs.  
+
 # 1.1.0 Futures
 ## Nested Options
 
