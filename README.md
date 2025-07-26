@@ -1045,25 +1045,27 @@ public function getOptions(): array {
 
 ---
 
-## ⚠️ All generator methods must start with `$this->request()`
+## ⚠️ What to be aware of if you don't call request first in your generator
 
-use schedule() to tell the system that your generator intends to request() in the future
+If your generator does **not** start with `yield from $this->request(...)`, you **must** call `$this->schedule();` to inform the AwaitFormOptions system that a `request()` is coming later  
+If you forget this, the system may either **ignore the `request()` entirely**, or worse, **cause a memory leak** due to improper bridge state retention　　
+
+#### ❌ Incorrect Example
 
 ```php
-// ❌ Incorrect: no $this->request() as the first yield
 public function flow(): \Generator {
     if ($someCondition) {
-        yield from $this->stepA(); // Invalid first yield
+        yield from $this->stepA(); // Not a request, no schedule
     }
-    yield from $this->request([...]);
+    yield from $this->request([...]); // This may be ignored or cause a leak
 }
 ```
 
-✅ **Correct: always begin with `$this->request()`**  
+✅ **Correct: If you think you might call await several times in advance, use `$this->schedule();` beforehand
 
 ```php
 public function flow(): \Generator {
-    $this->schedule(); // In the future, tell the system to wait until the request is executed
+    $this->schedule(); // Declare intention to request later
     if ($input === "A") {
         yield from $this->stepA();
     }
@@ -1071,7 +1073,6 @@ public function flow(): \Generator {
 }
 ```
 
-Failing to start with `$this->request()` may cause undefined behavior or runtime errors.  
 
 ## ❓ How can I preserve the state of a form?
 Currently, this is a known limitation and an ongoing area of exploration. In the core-sod architecture, all input states are managed and validated through a flat, object-oriented structure. Each form field's value is stored in a persistent object that represents the current session.  
