@@ -33,7 +33,10 @@ trait FormBridgeTrait{
 	 */
 	final public function dispose() : void{
 		unset($this->bridge, $this->reservesId);
+		$this->userDispose();
 	}
+
+	abstract public function userDispose() : void;
 
 	/**
 	 * Wait until all other options are complete

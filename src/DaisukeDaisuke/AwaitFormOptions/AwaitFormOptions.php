@@ -134,6 +134,12 @@ class AwaitFormOptions{
 			}catch(AwaitFormException $awaitFormException){
 				if(!$neverRejects){
 					$bridge->rejectsAll($awaitFormException);
+				}else{
+					try{
+						$bridge->rejectsAll(new AwaitFormOptionsAbortException());
+					}catch(AwaitFormOptionsAbortException|AwaitFormException){
+
+					}
 				}
 				if($throwExceptionInCaller){
 					throw $awaitFormException;
@@ -278,6 +284,12 @@ class AwaitFormOptions{
 			}catch(AwaitFormException $awaitFormException){
 				if(!$neverRejects){
 					$bridge->rejectsAll($awaitFormException);
+				}else{
+					try{
+						$bridge->rejectsAll(new AwaitFormOptionsAbortException());
+					}catch(AwaitFormOptionsAbortException|AwaitFormException){
+
+					}
 				}
 				if($throwExceptionInCaller){
 					throw $awaitFormException;
