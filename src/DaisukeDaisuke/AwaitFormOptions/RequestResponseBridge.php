@@ -139,7 +139,6 @@ class RequestResponseBridge{
 			try{
 				$cont = $this->reject($counter++, new AwaitFormOptionsAbortException());
 			}catch(AwaitFormOptionsAbortException){
-				// stop loop
 				continue;
 			}
 		}while($cont);
