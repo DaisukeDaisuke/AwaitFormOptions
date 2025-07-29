@@ -156,6 +156,10 @@ class HPFormOptions extends FormOptions {
 			$this->currentHP(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    unset($this->player);
+	}
 }
 ```
 
@@ -365,6 +369,10 @@ class NameMenuOptions extends MenuOptions{
 			$this->optionsA(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    unset($this->player, $this->options);
+	}
 }
 ```
 
@@ -497,6 +505,10 @@ class EntityNameMenuOptions extends MenuOptions {
 	public function getOptions(): array {
 		return [$this->chooseEntity()];
 	}
+	
+	public function userDispose() : void{
+	    unset($this->player, $this->entities);
+	}
 }
 ```
 
@@ -572,6 +584,9 @@ class SimpleButton extends MenuOptions{
 			$this->choose(0),
 			$this->choose(1),
 		];
+	}
+	public function userDispose() : void{
+	    unset($this->name, $this->id);
 	}
 }
 ```
@@ -688,6 +703,9 @@ class SimpleInput extends FormOptions{
 			$this->input(1),
 		];
 	}
+	public function userDispose() : void{
+	    unset($this->text, $this->default, $this->placeholder, $this->id);
+	}
 }
 
 ```
@@ -781,6 +799,10 @@ class MobKillerForm extends MenuOptions{
 			$this->KillerForm(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    unset($this->entity);
+	}
 }
 
 ```
@@ -850,6 +872,10 @@ class ConfirmInputForm extends FormOptions{
 	public function getOptions(): array {
 		return [$this->confirmOnce()];
 	}
+	
+	public function userDispose() : void{
+	    
+	}
 }
 ```
 
@@ -916,6 +942,10 @@ class HpBasedFoodOptions extends MenuOptions{
 			$result[] = $this->giveSteak();
 		}
 		return $result;
+	}
+	
+	public function userDispose() : void{
+	    unset($this->player);
 	}
 }
 ```
@@ -1157,6 +1187,10 @@ class ConfirmInputForm extends FormOptions{
 			"confirm" => $this->confirmOnce(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    
+	}
 }
 ```
 
@@ -1214,6 +1248,10 @@ class ConfirmInputForm extends FormOptions{
 			"confirm" => $this->confirmOnce(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    
+	}
 }
 ```
 
@@ -1253,11 +1291,15 @@ class HpBasedFoodOptions extends MenuOptions{
 			$this->giveRawFish1(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    
+	}
 }
 ```
 
 ## 1.3.0 Future
-## schedule
+### schedule
 Want to use some await before sending a request? Now you can with schedule() in 1.3.0!  
 
 ```php
@@ -1285,5 +1327,21 @@ class HpBasedFoodOptions extends MenuOptions{
 			$this->giveRawFish1(),
 		];
 	}
+	
+	public function userDispose() : void{
+	    
+	}
 }
 ```
+
+## 2.0.0 Future
+### A new abstract has been added: userDispose
+Each option must implement userDispose to handle garbage collection  
+```php
+public function userDispose() : void{
+	//As of 2.0.0, options must implement userDispose
+}
+```
+
+### Memory leak fixed
+Fixed gc leak (memory leak) when form is abandoned　　
