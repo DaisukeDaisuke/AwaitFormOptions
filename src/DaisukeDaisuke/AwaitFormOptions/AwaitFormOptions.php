@@ -135,11 +135,13 @@ class AwaitFormOptions{
 				if(!$neverRejects){
 					$bridge->rejectsAll($awaitFormException);
 				}else{
-					try{
-						$bridge->rejectsAll(new AwaitFormOptionsAbortException());
-					}catch(AwaitFormOptionsAbortException|AwaitFormException){
-
-					}
+					/*
+					 * This is a hack to ensure all reject callbacks are called, even if some throw exceptions
+					 * The built-in rejectsAll() method stops processing if one reject() call doesn't throw
+					 * But that’s arguably a bug in rejectsAll()
+					 * Without it, AwaitFormOptions will make the gc angry :(
+					 */
+					$bridge->abortAll();
 				}
 				if($throwExceptionInCaller){
 					throw $awaitFormException;
@@ -154,9 +156,9 @@ class AwaitFormOptions{
 			foreach($needDispose as $item){
 				$item->dispose();
 			}
-			unset($bridge);
+			unset($bridge, $needDispose);
 		}
-		//This code path should be unreachable
+		//This code path should be unreachable :(
 	}
 
 	/**
@@ -223,7 +225,9 @@ class AwaitFormOptions{
 				}
 			}
 
-			$bridge->race(0, $flatOptions);
+			if(count($flatOptions) !== 0){
+				$bridge->race(0, $flatOptions);
+			}
 
 			// 各 MenuOptions に紐づくボタン群を構築
 			$counter = 0;
@@ -285,11 +289,13 @@ class AwaitFormOptions{
 				if(!$neverRejects){
 					$bridge->rejectsAll($awaitFormException);
 				}else{
-					try{
-						$bridge->rejectsAll(new AwaitFormOptionsAbortException());
-					}catch(AwaitFormOptionsAbortException|AwaitFormException){
-
-					}
+					/*
+					 * This is a hack to ensure all reject callbacks are called, even if some throw exceptions
+					 * The built-in rejectsAll() method stops processing if one reject() call doesn't throw
+					 * But that’s arguably a bug in rejectsAll()
+					 * Without it, AwaitFormOptions will make the gc angry :(
+					 */
+					$bridge->abortAll();
 				}
 				if($throwExceptionInCaller){
 					throw $awaitFormException;

@@ -35,8 +35,8 @@ class RequestResponseBridge{
 	/**
 	 * クライアントから値を送り、応答を待つ
 	 *
-	 * @param mixed $value 要求する値
-	 * @param ?int $reserved 予約id
+	 * @param mixed $value    要求する値
+	 * @param ?int  $reserved 予約id
 	 * @return \Generator<mixed> 応答値
 	 */
 	public function request(mixed $value, int $reserved = null) : \Generator{
@@ -49,7 +49,6 @@ class RequestResponseBridge{
 			$this->pendingSend[$id] = $resolve;
 			$this->rejects[$id] = $reject;
 
-			//Resolve reserve
 			if($reserved !== null && isset($this->reserves[$reserved])){
 				$this->reserves[$reserved]->sendWithoutWait($id);
 				unset($this->reserves[$reserved]);
@@ -59,8 +58,6 @@ class RequestResponseBridge{
 
 	/**
 	 * 将来のrequestを予約する。
-	 *
-	 * @return int
 	 */
 	public function schedule() : int{
 		$id = $this->reservesId++;
@@ -103,17 +100,56 @@ class RequestResponseBridge{
 		unset($this->pendingRequest[$id], $this->pendingSend[$id]);
 	}
 
+	/**
+	 * Calls reject() on all managed generators with the given exception.
+	 *
+	 * ⚠ If any rejection results in an uncaught exception, the entire rejectsAll() loop stops.
+	 * This prevents remaining generators from being rejected, potentially causing memory leaks
+	 * due to unreleased resources in still-pending generators.
+	 *
+	 * It is assumed that such uncaught exceptions indicate a crash is desirable,
+	 * but in non-fatal environments this may lead to resource leakage.
+	 *
+	 * To prevent this, wrap each reject() call in try-catch to ensure the loop completes.
+	 *
+	 * @param \Throwable $throwable The exception to pass to each reject handler.
+	 * @throws \Throwable
+	 */
 	public function rejectsAll(\Throwable $throwable) : void{
 		foreach($this->rejects as $id => $reject){
 			$this->reject($id, $throwable);
 		}
 	}
 
-	public function reject(int $id, \Throwable $throwable) : void{
+	/**
+	 * Forcefully rejects all managed generators with the given exception.
+	 *
+	 * Unlike rejectsAll(), this method ensures that all reject() calls are executed,
+	 * even if some throw exceptions. This prevents partial rejection and memory leaks
+	 * caused by lingering unreleased generators.
+	 *
+	 * Use this when it's critical to clean up all pending states, regardless of crash behavior.
+	 *
+	 * @throws \Throwable
+	 */
+	public function abortAll() : void{
+		$counter = 0;
+		do{
+			try{
+				$cont = $this->reject($counter++, new AwaitFormOptionsAbortException());
+			}catch(AwaitFormOptionsAbortException){
+				// stop loop
+				break;
+			}
+		}while($cont);
+	}
+
+	public function reject(int $id, \Throwable $throwable) : bool{
 		try{
 			if(isset($this->rejects[$id])){
 				($this->rejects[$id])($throwable);
 				unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
+				return true;
 			}
 		}catch(AwaitException $exception){
 			/**
@@ -133,12 +169,13 @@ class RequestResponseBridge{
 			 */
 			throw $exception->getPrevious() ?? $exception;
 		}
+		return false;
 	}
 
 	/**
 	 * @param array<\Generator<mixed>> $array
 	 */
-	public function all(int $id, int|string $owenr, array $array,  ?array $keys = []) : void{
+	public function all(int $id, int|string $owenr, array $array, ?array $keys = []) : void{
 		Await::f2c(function() use ($owenr, $id, $array, $keys){
 			$return = yield from Await::All($array);
 			if($keys !== null){
@@ -184,8 +221,8 @@ class RequestResponseBridge{
 	public function tryFinalize() : void{
 		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
 
-		foreach ($this->finalizeList as $group) {
-			foreach ($group as $item) {
+		foreach($this->finalizeList as $group){
+			foreach($group as $item){
 				$item->sendWithoutWait(null);
 			}
 		}
