@@ -6,6 +6,7 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 
 abstract class MenuOptions{
 	use FormBridgeTrait;
+
 	/**
 	 * @return array<\Generator>|array<MenuOptions>
 	 */
