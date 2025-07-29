@@ -134,12 +134,13 @@ class RequestResponseBridge{
 	 */
 	public function abortAll() : void{
 		$counter = 0;
+		$cont = true;
 		do{
 			try{
 				$cont = $this->reject($counter++, new AwaitFormOptionsAbortException());
 			}catch(AwaitFormOptionsAbortException){
 				// stop loop
-				break;
+				continue;
 			}
 		}while($cont);
 	}
