@@ -168,7 +168,6 @@ class RequestResponseBridge{
 		try{
 			if(isset($this->rejects[$id])){
 				($this->rejects[$id])($throwable);
-				unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
 				return true;
 			}
 		}catch(AwaitException $exception){
@@ -188,6 +187,8 @@ class RequestResponseBridge{
 			 * @See Await::reject() for reference.
 			 */
 			throw $exception->getPrevious() ?? $exception;
+		}finally{
+			unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
 		}
 		return false;
 	}
