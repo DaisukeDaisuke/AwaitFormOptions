@@ -146,7 +146,6 @@ class RequestResponseBridge{
 		}while($cont);
 	}
 
-
 	/**
 	 * Rejects a request with a specified identifier by invoking the associated rejection handler
 	 * with the provided throwable. Removes the associated handlers upon rejection.
@@ -157,7 +156,7 @@ class RequestResponseBridge{
 	 * However, if the exception is not caught within the child generator, it will propagate (leak)
 	 * to the parent coroutine (generator).
 	 *
-	 * @param int $id The unique identifier for the request to reject.
+	 * @param int        $id        The unique identifier for the request to reject.
 	 * @param \Throwable $throwable The throwable used to reject the request.
 	 * @return bool Returns true if a rejection handler was found and successfully invoked; otherwise, returns false.
 	 *
@@ -204,12 +203,10 @@ class RequestResponseBridge{
 	 * The final results are then stored in the `returns` property, indexed by the specified unique
 	 * identifier ($id) and owner identifier ($owenr).
 	 *
-	 * @param int             $id    Unique identifier for storing the results.
-	 * @param int|string      $owenr Identifier for the owner of the result.
+	 * @param int                      $id    Unique identifier for storing the results.
+	 * @param int|string               $owenr Identifier for the owner of the result.
 	 * @param array<\Generator<mixed>> $array An array of tasks (generators) to be processed asynchronously.
-	 * @param array|null      $keys  Optional array of keys for mapping the results.
-	 *
-	 * @return void
+	 * @param array|null               $keys  Optional array of keys for mapping the results.
 	 */
 	public function all(int $id, int|string $owenr, array $array, ?array $keys = []) : void{
 		Await::f2c(function() use ($owenr, $id, $array, $keys){
@@ -229,7 +226,7 @@ class RequestResponseBridge{
 	 * The result of the completed generator is stored using a key that combines the provided base identifier ($id)
 	 * with the index of the generator that finished first.
 	 *
-	 * @param int $id The base identifier for storing the result.
+	 * @param int                      $id    The base identifier for storing the result.
 	 * @param array<\Generator<mixed>> $array An array of child generators to execute in a race.
 	 * @throws \Throwable If an exception occurs within any child generator or during the execution of Await::safeRace.
 	 *
@@ -249,11 +246,9 @@ class RequestResponseBridge{
 	 * The generator is run to completion and its returned value is then stored in the results storage,
 	 * indexed by the provided unique identifier ($id) and owner key ($owenr).
 	 *
-	 * @param int $id Unique identifier for storing the result.
-	 * @param int|string $owenr The key used to store the generator's return value.
+	 * @param int               $id        Unique identifier for storing the result.
+	 * @param int|string        $owenr     The key used to store the generator's return value.
 	 * @param \Generator<mixed> $generator The child generator to execute.
-	 *
-	 * @return void
 	 */
 	public function one(int $id, int|string $owenr, \Generator $generator) : void{
 		Await::f2c(function() use ($owenr, $id, $generator){
@@ -296,8 +291,6 @@ class RequestResponseBridge{
 	 * (i.e., channels with higher priority values are processed first). For each scheduled finalization,
 	 * it sends a null value using non-blocking send to unblock any awaiting generator.
 	 * If no finalization reservations have been scheduled, the method performs no actions.
-	 *
-	 * @return void
 	 */
 	public function tryFinalize() : void{
 		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
