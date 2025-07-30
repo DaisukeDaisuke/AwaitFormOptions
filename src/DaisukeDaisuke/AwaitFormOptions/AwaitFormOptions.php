@@ -136,10 +136,11 @@ class AwaitFormOptions{
 					$bridge->rejectsAll($awaitFormException);
 				}else{
 					/*
-					 * This is a hack to ensure all reject callbacks are called, even if some throw exceptions
-					 * The built-in rejectsAll() method stops processing if one reject() call doesn't throw
-					 * But that’s arguably a bug in rejectsAll()
-					 * Without it, AwaitFormOptions will make the gc angry :(
+					 * This is a workaround to ensure that all reject callbacks are executed,
+					 * even if some of them throw exceptions.
+					 * The built-in rejectsAll() method stops processing if any reject() call
+					 * does *not* throw, which is arguably a bug.
+					 * Without this workaround, AwaitFormOptions can cause issues with garbage collection. :(
 					 */
 					$bridge->abortAll();
 				}
@@ -290,10 +291,11 @@ class AwaitFormOptions{
 					$bridge->rejectsAll($awaitFormException);
 				}else{
 					/*
-					 * This is a hack to ensure all reject callbacks are called, even if some throw exceptions
-					 * The built-in rejectsAll() method stops processing if one reject() call doesn't throw
-					 * But that’s arguably a bug in rejectsAll()
-					 * Without it, AwaitFormOptions will make the gc angry :(
+					 * This is a workaround to ensure that all reject callbacks are executed,
+					 * even if some of them throw exceptions.
+					 * The built-in rejectsAll() method stops processing if any reject() call
+					 * does *not* throw, which is arguably a bug.
+					 * Without this workaround, AwaitFormOptions can cause issues with garbage collection. :(
 					 */
 					$bridge->abortAll();
 				}
