@@ -609,8 +609,8 @@ Forms can retrieve the return value of a generator in the same way, note that in
 
 > [!NOTE]
 > Note that when `$neverRejects` is true, child generator processing is forcefully terminated, so an empty array is returned if an error occurs in the form  
-> sendFormAsync will collect all generator return values even if the form fails as long as neverRejects is false. Note that this is different behavior from menu.  
->
+> ~~sendFormAsync will collect all generator return values even if the form fails as long as neverRejects is false. Note that this is different behavior from menu.~~  
+> Due to the memory leak prevention measures in 2.0.1, it is no longer collected or null is returned.
 
 > [!TIP]
 > In `sendFormAsync()`, the return value preserves:  
