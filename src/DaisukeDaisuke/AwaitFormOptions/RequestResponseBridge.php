@@ -79,6 +79,8 @@ class RequestResponseBridge{
 			yield from $reserve->receive();
 		}
 
+		unset($this->reserves);
+
 		foreach($this->pendingRequest as $id => $channel){
 			$result[$id] = yield from $channel->receive();
 		}
@@ -294,11 +296,18 @@ class RequestResponseBridge{
 	 */
 	public function tryFinalize() : void{
 		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
-
 		foreach($this->finalizeList as $group){
 			foreach($group as $item){
 				$item->sendWithoutWait(null);
 			}
 		}
+		unset($this->finalizeList);
+	}
+
+	/**
+	 * @internal
+	 */
+	public function dispose() : void{
+		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves);
 	}
 }

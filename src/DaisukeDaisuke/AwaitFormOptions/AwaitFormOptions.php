@@ -157,6 +157,7 @@ class AwaitFormOptions{
 			foreach($needDispose as $item){
 				$item->dispose();
 			}
+			$bridge->dispose();
 			unset($bridge, $needDispose);
 		}
 		//This code path should be unreachable :(
@@ -310,6 +311,7 @@ class AwaitFormOptions{
 			foreach($needDispose as $item){
 				$item->dispose();
 			}
+			$bridge->dispose();
 			unset($bridge);
 		}
 	}
