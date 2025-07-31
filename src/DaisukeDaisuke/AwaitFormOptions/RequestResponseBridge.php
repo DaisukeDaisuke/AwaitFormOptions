@@ -158,12 +158,14 @@ class RequestResponseBridge{
 	 * However, if the exception is not caught within the child generator, it will propagate (leak)
 	 * to the parent coroutine (generator).
 	 *
+	 * @template T of \Throwable
+	 *
 	 * @param int        $id        The unique identifier for the request to reject.
 	 * @param \Throwable $throwable The throwable used to reject the request.
+	 * @phpstan-param T $throwable
 	 * @return bool Returns true if a rejection handler was found and successfully invoked; otherwise, returns false.
 	 *
-	 * @throws \Throwable Re-throws the previous exception or the caught exception if no previous exists,
-	 *                    in cases of nested AwaitException wrapping.
+	 * @throws \Throwable|T
 	 */
 	public function reject(int $id, \Throwable $throwable) : bool{
 		try{
