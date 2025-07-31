@@ -41,7 +41,7 @@ class AwaitFormOptions{
 
 	/**
 	 * @param array<FormOptions> $options Awaitable form option providers
-	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException|\Throwable To fix the error in PHPStorm, I need \Throwable derived from Reject() :(
+	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -184,7 +184,7 @@ class AwaitFormOptions{
 	/**
 	 * @param array<MenuOptions> $buttons Awaitable menu option providers
 	 * @return \Generator<mixed>
-	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException|\Throwable To fix the error in PHPStorm, I need \Throwable derived from Reject() :(
+	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();
