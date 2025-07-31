@@ -28,7 +28,7 @@ class AwaitFormOptions{
 
 	/**
 	 * @param array<FormOptions> $options
-	 * @throws FormValidationException|AwaitFormException
+	 * @throws \Throwable
 	 */
 	public static function sendForm(Player $player, string $title, array $options, bool $neverRejects = false) : void{
 		Await::f2c(function() use ($neverRejects, $options, $title, $player){
@@ -41,12 +41,17 @@ class AwaitFormOptions{
 
 	/**
 	 * @param array<FormOptions> $options Awaitable form option providers
-	 * @throws FormValidationException|AwaitFormException
+	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException|\Throwable To fix the error in PHPStorm, I need \Throwable derived from Reject() :(
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();
-		Utils::validateArrayValueType($options, static function(FormOptions $value){
-		});
+		try{
+			Utils::validateArrayValueType($options, static function(FormOptions $value){
+			});
+		}catch(\TypeError $exception){
+			throw new AwaitFormOptionsInvalidValueException("Options must be an array of FormOptions instances: " . $exception->getMessage(), 0, $exception);
+		}
+
 		$needDispose = [];
 		try{
 			$options_keys = [];
@@ -59,7 +64,7 @@ class AwaitFormOptions{
 					Utils::validateArrayValueType($forms, static function(\Generator|FormOptions $value) : void{
 					});
 				}catch(\TypeError){
-					throw new \TypeError($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendFromAsync()");
+					throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendFromAsync()");
 				}
 
 				foreach($forms as $key1 => $item){
@@ -71,7 +76,7 @@ class AwaitFormOptions{
 							Utils::validateArrayValueType($value, static function(\Generator $value) : void{
 							});
 						}catch(\TypeError){
-							throw new \TypeError($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
+							throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
 						}
 						$bridge->all($counter, $key1, $value, array_keys($value));
 					}else{
@@ -165,7 +170,7 @@ class AwaitFormOptions{
 
 	/**
 	 * @param array<MenuOptions> $buttons
-	 * @throws FormValidationException|AwaitFormException
+	 * @throws \Throwable
 	 */
 	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false) : void{
 		Await::f2c(function() use ($neverRejects, $content, $buttons, $title, $player){
@@ -179,14 +184,19 @@ class AwaitFormOptions{
 	/**
 	 * @param array<MenuOptions> $buttons Awaitable menu option providers
 	 * @return \Generator<mixed>
-	 * @throws FormValidationException|AwaitFormException|\Throwable
+	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException|\Throwable To fix the error in PHPStorm, I need \Throwable derived from Reject() :(
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
 		$bridge = new RequestResponseBridge();
 
+		try{
+			Utils::validateArrayValueType($buttons, static function(MenuOptions $value) : void{
+			});
+		}catch(\TypeError $exception){
+			throw new AwaitFormOptionsInvalidValueException("Buttons must be an array of MenuOptions instances: " . $exception->getMessage(), 0, $exception);
+		}
+
 		// バリデーション：すべて MenuOptions を期待
-		Utils::validateArrayValueType($buttons, static function(MenuOptions $value) : void{
-		});
 
 		$counter = 0;
 		// Bridge注入とオプション構築呼び出し
@@ -204,7 +214,7 @@ class AwaitFormOptions{
 					Utils::validateArrayValueType($array, static function(\Generator|MenuOptions $value) : void{
 					});
 				}catch(\TypeError){
-					throw new \TypeError($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
+					throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
 				}
 
 				foreach($array as $key2 => $item){
@@ -216,7 +226,7 @@ class AwaitFormOptions{
 							Utils::validateArrayValueType($value, static function(\Generator $value) : void{
 							});
 						}catch(\TypeError){
-							throw new \TypeError($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
+							throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions(): Doubly nested form options cannot be expanded");
 						}
 						foreach($value as $sub){
 							$flatOptions[] = $sub;

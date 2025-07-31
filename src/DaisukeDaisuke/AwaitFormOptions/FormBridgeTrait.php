@@ -60,7 +60,7 @@ trait FormBridgeTrait{
 	 * Instruct AwaitFormOptions to add an elements
 	 * When this function is awaited, the parent coroutines receives the form response or exception
 	 *
-	 * @throws AwaitFormException
+	 * @throws AwaitFormException|AwaitFormOptionsInvalidValueException
 	 */
 	final public function request(array $value) : \Generator{
 		$missed = false;
