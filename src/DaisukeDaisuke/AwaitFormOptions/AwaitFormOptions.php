@@ -312,7 +312,7 @@ class AwaitFormOptions{
 				$item->dispose();
 			}
 			$bridge->dispose();
-			unset($bridge);
+			unset($bridge, $needDispose);
 		}
 	}
 }
