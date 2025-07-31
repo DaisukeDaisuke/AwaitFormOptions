@@ -12,7 +12,6 @@ use function count;
 use function krsort;
 
 class RequestResponseBridge{
-
 	private int $nextId = 0;
 
 	private int $reservesId = 0;
@@ -84,6 +83,9 @@ class RequestResponseBridge{
 		foreach($this->pendingRequest as $id => $channel){
 			$result[$id] = yield from $channel->receive();
 		}
+
+		unset($this->pendingRequest);
+
 		return $result;
 	}
 
@@ -99,7 +101,7 @@ class RequestResponseBridge{
 		}
 		($this->pendingSend[$id])($value);
 
-		unset($this->pendingRequest[$id], $this->pendingSend[$id]);
+		unset($this->rejects[$id], $this->pendingSend[$id]);
 	}
 
 	/**
@@ -191,7 +193,7 @@ class RequestResponseBridge{
 			 */
 			throw $exception->getPrevious() ?? $exception;
 		}finally{
-			unset($this->rejects[$id], $this->pendingSend[$id], $this->pendingRequest[$id]);
+			unset($this->rejects[$id], $this->pendingSend[$id]);
 		}
 		return false;
 	}
