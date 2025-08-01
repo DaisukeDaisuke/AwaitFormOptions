@@ -20,11 +20,15 @@ trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
 	private bool $requested = false;
 	private ?int $reservesId = null;
+	private bool $disposed = false;
 
 	/**
 	 * @internal
 	 */
 	final public function setBridge(RequestResponseBridge $bridge) : void{
+		if($this->isDisposed()){
+			throw new AwaitFormOptionsInvalidValueException("Option reuse detected, class: ". static::class);
+		}
 		$this->bridge = $bridge;
 	}
 
@@ -32,6 +36,7 @@ trait FormBridgeTrait{
 	 * @internal
 	 */
 	final public function dispose() : void{
+		$this->setDisposed(true);
 		unset($this->bridge, $this->reservesId);
 		$this->userDispose();
 	}
@@ -51,7 +56,7 @@ trait FormBridgeTrait{
 	 */
 	final public function schedule() : void{
 		if($this->reservesId !== null){
-			throw new BadFunctionCallException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks");
+			throw new BadFunctionCallException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks, class: ". static::class);
 		}
 		$this->reservesId = $this->bridge->schedule();
 	}
@@ -95,5 +100,13 @@ trait FormBridgeTrait{
 		}finally{
 			$this->requested = true;
 		}
+	}
+
+	public function isDisposed() : bool{
+		return $this->disposed;
+	}
+
+	private function setDisposed(bool $disposed) : void{
+		$this->disposed = $disposed;
 	}
 }
