@@ -1255,8 +1255,8 @@ class ConfirmInputForm extends FormOptions{
 }
 ```
 
-## RaceLostException
-Due to the processing improvements in 1.1.0, all awaitformoption menus now receive RaceLostException equally
+## AwaitFromOptionsAbortException
+Due to the processing improvements in 1.1.0, all awaitformoption menus now receive AwaitFromOptionsAbortException equally
 
 ```php
 <?php
@@ -1345,3 +1345,7 @@ public function userDispose() : void{
 
 ### Memory leak fixed
 Fixed gc leak (memory leak) when form is abandoned　　
+
+## 2.0.10 Fix
+
+To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer used in `AwaitFromOptions`. Instead, if a coroutine is forcibly terminated, an `AwaitFromOptionsAbortException` is now thrown. This change improves consistency
