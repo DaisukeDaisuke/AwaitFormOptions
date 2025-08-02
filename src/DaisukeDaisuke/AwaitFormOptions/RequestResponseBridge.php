@@ -139,15 +139,30 @@ class RequestResponseBridge{
 	 * @throws \Throwable
 	 */
 	public function abortAll() : void{
-		$counter = 0;
-		$cont = true;
-		do{
-			try{
-				$cont = $this->reject($counter++, new AwaitFormOptionsAbortException());
-			}catch(AwaitFormOptionsAbortException){
-				continue;
-			}
-		}while($cont);
+		foreach($this->rejects as $id => $reject){
+			$this->abort($id);
+		}
+	}
+
+	/**
+	 * Aborts a pending asynchronous operation associated with a given identifier.
+	 *
+	 * This method attempts to reject or terminate an operation identified by the provided ID.
+	 * If the operation cannot be aborted or an exception related to the abort process occurs,
+	 * the method safely handles it and returns a failure status.
+	 *
+	 * @param int $id The unique identifier of the asynchronous operation to be aborted.
+	 *
+	 * @return bool Returns true if the operation was successfully aborted; false otherwise.
+	 *
+	 * @throws \Throwable
+	 */
+	public function abort(int $id) : bool{
+		try{
+			return $this->reject($id, new AwaitFormOptionsAbortException());
+		}catch(AwaitFormOptionsAbortException){
+			return false;
+		}
 	}
 
 	/**
@@ -239,10 +254,12 @@ class RequestResponseBridge{
 	 * @see solve Refer to the `solve` method for additional context on related functionality.
 	 */
 	public function race(int $id, array $array) : void{
-		Await::f2c(function() use ($id, $array){
-			[$which, $return] = yield from Await::safeRace($array);
-			$this->returns[$id + $which] = $return;
-		});
+		foreach($array as $which => $generator){
+			Await::g2c($generator, function($result) use ($id, $which){
+				$this->returns[$id + $which] = $result;
+				$this->abortAll();
+			});
+		}
 	}
 
 	/**
