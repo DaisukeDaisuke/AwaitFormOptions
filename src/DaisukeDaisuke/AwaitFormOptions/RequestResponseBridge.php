@@ -326,6 +326,6 @@ class RequestResponseBridge{
 	}
 
 	public function dispose() : void{
-		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves);
+		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId);
 	}
 }
