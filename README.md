@@ -35,14 +35,14 @@ AwaitFormOptions is designed to simplify complex form workflows and improve deve
 ---
 
 > [!NOTE]
-> When using an older version, please refer to the README for that specific version
-> This README also serves as the specification and documentation, and is continuously updated to reflect the latest version. It does not support older versions.  
-> To view documentation for older versions, please refer to the corresponding tags.
-> 
-> Support Status
-> 1.x series: End of life, There is a significant memory leak
-> 2.x series: Archived and issues are supported
-> 3.x series: In development
+> When using an older version, please refer to the README for that specific version  
+> This README also serves as the specification and documentation, and is continuously updated to reflect the latest version. It does not support older versions.   
+> To view documentation for older versions, please refer to the corresponding tags.   
+>   
+> Support Status  
+> 1.x series: End of life, There is a significant memory leak  
+> 2.x series: Archived and issues are supported  
+> 3.x series: In development  
 
 
 ## Why?
