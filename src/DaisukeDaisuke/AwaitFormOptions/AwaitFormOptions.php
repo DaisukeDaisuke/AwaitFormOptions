@@ -196,11 +196,6 @@ class AwaitFormOptions{
 			throw new AwaitFormOptionsInvalidValueException("Buttons must be an array of MenuOptions instances: " . $exception->getMessage(), 0, $exception);
 		}
 
-		// バリデーション：すべて MenuOptions を期待
-
-		$counter = 0;
-		// Bridge注入とオプション構築呼び出し
-
 		$needDispose = [];
 		try{
 
