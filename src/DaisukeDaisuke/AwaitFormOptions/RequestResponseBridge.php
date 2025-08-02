@@ -10,6 +10,8 @@ use SOFe\AwaitGenerator\Channel;
 use function array_combine;
 use function count;
 use function krsort;
+use cosmicpe\awaitform\AwaitFormException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsAbortException;
 
 class RequestResponseBridge{
 	private int $nextId = 0;
@@ -118,10 +120,10 @@ class RequestResponseBridge{
 	 * To ensure all generators are properly cleaned up regardless of crash behavior,
 	 * use abortAll() instead.
 	 *
-	 * @param \Throwable $throwable The exception to pass to each reject handler.
-	 * @throws \Throwable
+	 * @param AwaitFormException $throwable The exception to pass to each reject handler.
+	 * @throws AwaitFormException
 	 */
-	public function rejectsAll(\Throwable $throwable) : void{
+	public function rejectsAll(AwaitFormException $throwable) : void{
 		foreach($this->rejects as $id => $reject){
 			$this->reject($id, $throwable);
 		}

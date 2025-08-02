@@ -20,6 +20,7 @@ use function count;
 use function is_array;
 use function is_object;
 use function is_scalar;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
 
 class AwaitFormOptions{
 	final private function __construct(){
@@ -43,7 +44,7 @@ class AwaitFormOptions{
 	 * @param array<FormOptions> $options Awaitable form option providers
 	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
-	public static function sendFormAsync(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
+	public static function sendFormAsync(Player $player, string $title, array $options) : \Generator{
 		$bridge = new RequestResponseBridge();
 		try{
 			Utils::validateArrayValueType($options, static function(FormOptions $value){
@@ -137,27 +138,9 @@ class AwaitFormOptions{
 
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
-				if(!$neverRejects){
-					$bridge->rejectsAll($awaitFormException);
-				}else{
-					/*
-					 * This is a workaround to ensure that all reject callbacks are executed,
-					 * even if some of them throw exceptions.
-					 * The built-in rejectsAll() method stops processing if any reject() call
-					 * does *not* throw, which is arguably a bug.
-					 * Without this workaround, AwaitFormOptions can cause issues with garbage collection. :(
-					 */
-					$bridge->abortAll();
-				}
-				if($throwExceptionInCaller){
-					throw $awaitFormException;
-				}
+				$bridge->rejectsAll($awaitFormException);
+				throw $awaitFormException;
 			}
-			/*!$neverRejects === true => return []*/
-			if(count($options_keys) == count($bridge->getReturns())){
-				return array_combine($options_keys, $bridge->getReturns());
-			}
-			return [];
 		}finally{
 			foreach($needDispose as $item){
 				$item->dispose();
@@ -175,7 +158,7 @@ class AwaitFormOptions{
 	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false) : void{
 		Await::f2c(function() use ($neverRejects, $content, $buttons, $title, $player){
 			try{
-				yield from self::sendMenuAsync($player, $title, $content, $buttons, $neverRejects, false);
+				yield from self::sendMenuAsync($player, $title, $content, $buttons);
 			}catch(FormValidationException|AwaitFormException){
 			}
 		});
@@ -186,7 +169,7 @@ class AwaitFormOptions{
 	 * @return \Generator<mixed>
 	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
-	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
+	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons) : \Generator{
 		$bridge = new RequestResponseBridge();
 
 		try{
@@ -293,22 +276,8 @@ class AwaitFormOptions{
 					}
 				}
 			}catch(AwaitFormException $awaitFormException){
-				if(!$neverRejects){
-					$bridge->rejectsAll($awaitFormException);
-				}else{
-					/*
-					 * This is a workaround to ensure that all reject callbacks are executed,
-					 * even if some of them throw exceptions.
-					 * The built-in rejectsAll() method stops processing if any reject() call
-					 * does *not* throw, which is arguably a bug.
-					 * Without this workaround, AwaitFormOptions can cause issues with garbage collection. :(
-					 */
-					$bridge->abortAll();
-				}
-				if($throwExceptionInCaller){
-					throw $awaitFormException;
-				}
-				return null;
+				$bridge->rejectsAll($awaitFormException);
+				throw $awaitFormException;
 			}
 			// 該当しなかった場合はフォーム不正とみなす
 			throw new FormValidationException("An invalid button selection was made");
