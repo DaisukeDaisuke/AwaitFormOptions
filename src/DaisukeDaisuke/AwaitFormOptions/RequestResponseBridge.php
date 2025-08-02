@@ -161,7 +161,7 @@ class RequestResponseBridge{
 		try{
 			return $this->reject($id, new AwaitFormOptionsAbortException());
 		}catch(AwaitFormOptionsAbortException){
-			return false;
+			return true;
 		}
 	}
 
