@@ -5,6 +5,7 @@
 An option-driven form handler framework built on AwaitForm for `pmmp` plugins.  
 Designed to modularize complex user interactions and support clean, reusable, async code.  
 
+
 ## Requirements
 
 - [Cosmoverse/AwaitForm](https://github.com/Cosmoverse/AwaitForm)
@@ -32,6 +33,12 @@ If maximum performance is your goal, we strongly recommend using AwaitForm direc
 AwaitFormOptions is designed to simplify complex form workflows and improve developer ergonomics—not to optimize execution speed.   
 
 ---
+
+> [!NOTE]
+> When using an older version, please refer to the README for that specific version
+> This README also serves as the specification and documentation, and is continuously updated to reflect the latest version. It does not support older versions.  
+> To view documentation for older versions, please refer to the corresponding tags.
+
 
 ## Why?
 
