@@ -15,6 +15,9 @@ use function array_key_last;
 use function count;
 use function debug_backtrace;
 use const DEBUG_BACKTRACE_IGNORE_ARGS;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
@@ -41,22 +44,24 @@ trait FormBridgeTrait{
 		$this->userDispose();
 	}
 
-	abstract public function userDispose() : void;
+	abstract protected function userDispose() : void;
 
 	/**
 	 * Wait until all other options are complete
 	 */
-	final public function finalize() : \Generator{
+	final protected function finalize() : \Generator{
 		yield from $this->bridge->finalize();
 	}
 
 	/**
 	 * Form submissions will be temporarily suspended until all bookings are resolved
 	 * If you don't call request(), the coroutine will be deadlocked forever, so be sure to call it
+	 *
+	 * @throws AwaitFormOptionsExpectedCrashException
 	 */
-	final public function schedule() : void{
+	final protected function schedule() : void{
 		if($this->reservesId !== null){
-			throw new BadFunctionCallException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks, class: ". static::class);
+			throw new AwaitFormOptionsExpectedCrashException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks, class: ". static::class);
 		}
 		$this->reservesId = $this->bridge->schedule();
 	}
@@ -65,9 +70,9 @@ trait FormBridgeTrait{
 	 * Instruct AwaitFormOptions to add an elements
 	 * When this function is awaited, the parent coroutines receives the form response or exception
 	 *
-	 * @throws AwaitFormException|AwaitFormOptionsInvalidValueException
+	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
-	final public function request(array $value) : \Generator{
+	final protected function request(array $value) : \Generator{
 		$missed = false;
 		if(count($value) === 2){
 			if($value[array_key_first($value)] instanceof FormControl || $value[array_key_first($value)] instanceof Button){
@@ -85,18 +90,18 @@ trait FormBridgeTrait{
 			});
 
 			if($this->requested){
-				throw new BadFunctionCallException("Maybe you called \$this->request() twice? This is not allowed to prevent deadlocks");
+				throw new AwaitFormOptionsExpectedCrashException("Maybe you called \$this->request() twice? This is not allowed to prevent deadlocks");
 			}
 
 			return yield from $this->bridge->request($value, $this->reservesId);
-		}catch(InvalidArgumentException|BadFunctionCallException|\TypeError $exception){
+		}catch(AwaitFormOptionsExpectedCrashException|\TypeError $exception){
 			/**
 			 * @see AwaitFormOptions::sendMenuAsync()
 			 * @see AwaitFormOptions::sendFormAsync()
 			 */
 			//HACK: Making backtraces useful
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-			throw new AwaitFormOptionsInvalidValueException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
+			throw new AwaitFormOptionsExpectedCrashException($exception->getMessage() . " in " . ($dbg[0]['file'] ?? "null") . "(" . ($dbg[0]['line'] ?? "null") . "): " . ($dbg[0]['class'] ?? "null") . "->" . ($dbg[0]['function'] ?? "null") . "()", 0);
 		}finally{
 			$this->requested = true;
 		}
