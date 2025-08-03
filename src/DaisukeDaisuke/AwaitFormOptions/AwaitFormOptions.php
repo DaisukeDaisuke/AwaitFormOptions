@@ -21,6 +21,9 @@ use function is_array;
 use function is_object;
 use function is_scalar;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
 
 class AwaitFormOptions{
 	final private function __construct(){
@@ -99,7 +102,7 @@ class AwaitFormOptions{
 							if(array_is_list($item) && count($item) !== 2){
 								$bridge->reject(
 									$id,
-									new \InvalidArgumentException(
+									new AwaitFormOptionsExpectedCrashException(
 										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
 										" (key: " . $key . "). " .
 										"Ensure that your form returns an array like [Button, SelectedKey]. " .
@@ -115,7 +118,7 @@ class AwaitFormOptions{
 					// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
 					if(!is_scalar($key) || is_object($key)){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new \InvalidArgumentException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
+						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
 						return [];
 					}
 					$keys[] = $key;
@@ -138,8 +141,12 @@ class AwaitFormOptions{
 
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
-				$bridge->rejectsAll($awaitFormException);
-				throw $awaitFormException;
+				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
+			}catch(FormValidationException $formValidationException){
+				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
+			}catch(AwaitFormOptionsChildException $exception){
+				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
 		}finally{
 			foreach($needDispose as $item){
@@ -167,7 +174,7 @@ class AwaitFormOptions{
 	/**
 	 * @param array<MenuOptions> $buttons Awaitable menu option providers
 	 * @return \Generator<mixed>
-	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
+	 * @throws FormValidationException|AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -234,7 +241,7 @@ class AwaitFormOptions{
 							if(array_is_list($item) && count($item) !== 2){
 								$bridge->reject(
 									$id,
-									new \InvalidArgumentException(
+									new AwaitFormOptionsExpectedCrashException(
 										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
 										" (key: " . $key . "). " .
 										"Ensure that your form returns an array like [Button, SelectedKey]. " .
@@ -249,7 +256,7 @@ class AwaitFormOptions{
 					}
 					if(!$item instanceof Button){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new \InvalidArgumentException("Button is required, see also AwaitFormOptions::sendMenuAsync()"));
+						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("Button is required, see also AwaitFormOptions::sendMenuAsync()"));
 					}
 					$flatButtons[$counter++] = $item;
 					$keys[$count++] = $key;
@@ -276,11 +283,15 @@ class AwaitFormOptions{
 					}
 				}
 			}catch(AwaitFormException $awaitFormException){
-				$bridge->rejectsAll($awaitFormException);
-				throw $awaitFormException;
+				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
+			}catch(FormValidationException $formValidationException){
+				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
+			}catch(AwaitFormOptionsChildException $exception){
+				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
 			// 該当しなかった場合はフォーム不正とみなす
-			throw new FormValidationException("An invalid button selection was made");
+			throw new AwaitFormOptionsParentException("An invalid button selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 		}finally{
 			foreach($needDispose as $item){
 				$item->dispose();

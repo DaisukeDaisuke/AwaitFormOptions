@@ -9,6 +9,6 @@ namespace DaisukeDaisuke\AwaitFormOptions\exception;
  *
  * @see FormBridgeTrait::request()
  */
-class AwaitFormOptionsInvalidValueException extends \RuntimeException{
+final class AwaitFormOptionsInvalidValueException extends AwaitFormOptionsExpectedCrashException{
 
 }

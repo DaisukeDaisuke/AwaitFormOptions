@@ -12,6 +12,8 @@ use function count;
 use function krsort;
 use cosmicpe\awaitform\AwaitFormException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsAbortException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExcption;
 
 class RequestResponseBridge{
 	private int $nextId = 0;
@@ -39,6 +41,8 @@ class RequestResponseBridge{
 	 * @param mixed $value    要求する値
 	 * @param ?int  $reserved 予約id
 	 * @return \Generator<mixed> 応答値
+	 *
+	 * @throws AwaitFormOptionsChildException
 	 */
 	public function request(mixed $value, int $reserved = null) : \Generator{
 		$id = $this->nextId++;
@@ -120,12 +124,12 @@ class RequestResponseBridge{
 	 * To ensure all generators are properly cleaned up regardless of crash behavior,
 	 * use abortAll() instead.
 	 *
-	 * @param AwaitFormException $throwable The exception to pass to each reject handler.
-	 * @throws AwaitFormException
+	 * @param AwaitFormOptionsChildException $throwable The exception to pass to each reject handler.
+	 * @throws AwaitFormOptionsChildException
 	 */
-	public function rejectsAll(AwaitFormException $throwable) : void{
+	public function rejectsAll(AwaitFormOptionsChildException $throwable) : void{
 		foreach($this->rejects as $id => $reject){
-			$this->reject($id, $throwable);
+			$this->abort($id, $throwable);
 		}
 	}
 
@@ -156,13 +160,12 @@ class RequestResponseBridge{
 	 * @param int $id The unique identifier of the asynchronous operation to be aborted.
 	 *
 	 * @return bool Returns true if the operation was successfully aborted; false otherwise.
-	 *
-	 * @throws \Throwable
 	 */
-	public function abort(int $id) : bool{
+	public function abort(int $id, AwaitFormOptionsChildException $throwable = null) : bool{
+		$throwable ??=  new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED);
 		try{
-			return $this->reject($id, new AwaitFormOptionsAbortException());
-		}catch(AwaitFormOptionsAbortException){
+			return $this->reject($id, $throwable);
+		}catch(AwaitFormOptionsChildException){
 			return true;
 		}
 	}
@@ -177,16 +180,13 @@ class RequestResponseBridge{
 	 * However, if the exception is not caught within the child generator, it will propagate (leak)
 	 * to the parent coroutine (generator).
 	 *
-	 * @template T of \Throwable
-	 *
 	 * @param int        $id        The unique identifier for the request to reject.
-	 * @param \Throwable $throwable The throwable used to reject the request.
-	 * @phpstan-param T $throwable
+	 * @param AwaitFormOptionsExcption $throwable The throwable used to reject the request.
 	 * @return bool Returns true if a rejection handler was found and successfully invoked; otherwise, returns false.
 	 *
-	 * @throws \Throwable|T
+	 * @throws AwaitFormOptionsExcption
 	 */
-	public function reject(int $id, \Throwable $throwable) : bool{
+	public function reject(int $id, AwaitFormOptionsExcption $throwable) : bool{
 		try{
 			if(isset($this->rejects[$id])){
 				($this->rejects[$id])($throwable);
