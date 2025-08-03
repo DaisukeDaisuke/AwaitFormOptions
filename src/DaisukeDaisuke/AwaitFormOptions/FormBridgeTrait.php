@@ -44,12 +44,12 @@ trait FormBridgeTrait{
 		$this->userDispose();
 	}
 
-	abstract public function userDispose() : void;
+	abstract protected function userDispose() : void;
 
 	/**
 	 * Wait until all other options are complete
 	 */
-	final public function finalize() : \Generator{
+	final protected function finalize() : \Generator{
 		yield from $this->bridge->finalize();
 	}
 
@@ -59,7 +59,7 @@ trait FormBridgeTrait{
 	 *
 	 * @throws AwaitFormOptionsExpectedCrashException
 	 */
-	final public function schedule() : void{
+	final protected function schedule() : void{
 		if($this->reservesId !== null){
 			throw new AwaitFormOptionsExpectedCrashException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks, class: ". static::class);
 		}
@@ -72,7 +72,7 @@ trait FormBridgeTrait{
 	 *
 	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
-	final public function request(array $value) : \Generator{
+	final protected function request(array $value) : \Generator{
 		$missed = false;
 		if(count($value) === 2){
 			if($value[array_key_first($value)] instanceof FormControl || $value[array_key_first($value)] instanceof Button){
@@ -94,7 +94,7 @@ trait FormBridgeTrait{
 			}
 
 			return yield from $this->bridge->request($value, $this->reservesId);
-		}catch(InvalidArgumentException|AwaitFormOptionsExpectedCrashException|\TypeError $exception){
+		}catch(AwaitFormOptionsExpectedCrashException|\TypeError $exception){
 			/**
 			 * @see AwaitFormOptions::sendMenuAsync()
 			 * @see AwaitFormOptions::sendFormAsync()
