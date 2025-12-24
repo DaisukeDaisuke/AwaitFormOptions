@@ -1626,8 +1626,8 @@ To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer u
     level: 5
     exceptions:
       checkedExceptionClasses:
-        - cosmicpe\awaitform\AwaitFormException\AwaitFormOptionsParentException
-        - cosmicpe\awaitform\AwaitFormException\AwaitFormOptionsChildException
+        - DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException
+        - DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException
       uncheckedExceptionClasses:
         - DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException
   ```
