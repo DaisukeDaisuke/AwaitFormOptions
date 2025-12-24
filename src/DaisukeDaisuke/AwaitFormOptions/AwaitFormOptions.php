@@ -170,7 +170,7 @@ class AwaitFormOptions{
 		Await::f2c(function() use ($content, $buttons, $title, $player){
 			try{
 				yield from self::sendMenuAsync($player, $title, $content, $buttons);
-			}catch(FormValidationException|AwaitFormException){
+			}catch(FormValidationException|AwaitFormOptionsParentException){
 			}
 		});
 	}

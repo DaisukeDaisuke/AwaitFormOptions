@@ -86,24 +86,33 @@ https://github.com/user-attachments/assets/5be701db-4a41-4f04-bb49-693a8d40fdb8
 Split your form logic into reusable option classes:  
 
 ```php
-public function a(PlayerItemUseEvent $event) : void{
-    $player = $event->getPlayer();
-    Await::f2c(function() use ($player){
-        try{
-            yield from AwaitFormOptions::sendFormAsync(
-                player: $player,
-                title: "test",
-                options: [
-                    new HPFormOptions($player),
-                ],
-                neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
-                throwExceptionInCaller: false, // If true, awaitFormOption will throw an exception on the caller
-            );
-        }catch(FormValidationException){
-            // Form failed validation
-        }
-    });
-}
+  public function a(PlayerItemUseEvent $event) : void{
+      $player = $event->getPlayer();
+      Await::f2c(function() use ($player){
+          try{
+              yield from AwaitFormOptions::sendFormAsync(
+                  player: $player,
+                  title: "test",
+                  options: [
+                      new HPFormOptions($player),
+                  ]
+              );
+          }catch(FormValidationException|AwaitFormOptionsParentException){
+              // Form failed validation
+          }
+      });
+  }
+```
+
+```php
+use pocketmine\plugin\PluginBase;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerItemUseEvent;
+use SOFe\AwaitGenerator\Await;
+use DaisukeDaisuke\AwaitFormOptions\AwaitFormOptions;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException;
+use pocketmine\form\FormValidationException;
+use cosmicpe\awaitform\AwaitForm;
 ```
 
 ---
@@ -121,56 +130,61 @@ Each option will yield from `$this->request($form);` and wait for the response. 
 > - `AwaitFormOptionsInvalidValueException`: When `request()` is called more than once in the same generator.
 > - `AwaitFormOptionsInvalidValueException`: When the provided form/button array is invalid.
 > - `AwaitFormException`: If the player rejects the form, input is invalid, or the player logs out.
-
+>
+> The try-catch in the child generator may be omitted, but is not recommended.
 
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\FormOptions;
 use cosmicpe\awaitform\FormControl;
 use pocketmine\player\Player;
-use cosmicpe\awaitform\AwaitFormException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
-class HPFormOptions extends FormOptions {
-	public function __construct(private Player $player) {}
+class HPFormOptions extends FormOptions{
+	public function __construct(private Player $player){
+	}
 
-	public function maxHP(): \Generator {
-		try {
+	public function maxHP() : \Generator{
+		try{
 			$form = [
 				FormControl::input("Max HP:", "20", (string) $this->player->getMaxHealth()),
 			];
 			[$maxHP] = yield from $this->request($form); // awaiting response
 			$this->player->setMaxHealth((int) $maxHP);
 			$this->player->sendMessage("Max HP: {$maxHP}");
-		} catch (AwaitFormException $e) {
+		}catch(AwaitFormOptionsChildException $e){
 			var_dump($e->getCode());
 		}
 	}
 
-	public function currentHP(): \Generator {
-		try {
+	public function currentHP() : \Generator{
+		try{
 			$form = [
 				FormControl::input("Current HP:", "20", (string) $this->player->getHealth()),
 			];
 			[$currentHP] = yield from $this->request($form); // awaiting response
 			$this->player->setHealth((float) $currentHP);
 			$this->player->sendMessage("Current HP: {$currentHP}");
-		} catch (AwaitFormException $e) {
+		}catch(AwaitFormOptionsChildException $e){
 			var_dump($e->getCode());
 		}
 	}
 
-	public function getOptions(): array {
+	public function getOptions() : array{
 		return [
 			$this->maxHP(),
 			$this->currentHP(),
 		];
 	}
-	
+
 	public function userDispose() : void{
-	    unset($this->player);
+		unset($this->player);
 	}
 }
 ```
@@ -200,10 +214,8 @@ public function a(PlayerItemUseEvent $event): void {
                     new HPFormOptions($player),
                     new HPFormOptions($player),
                 ],
-                neverRejects: false,
-                throwExceptionInCaller: true,
             );
-        } catch (FormValidationException|AwaitFormException) {
+        } catch (FormValidationException|AwaitFormOptionsParentException) {
         }
     });
 }
@@ -211,71 +223,7 @@ public function a(PlayerItemUseEvent $event): void {
 
 ![Image](https://github.com/user-attachments/assets/29ac3350-7368-4e00-aac8-caadbfabd75a)
 
-Each instance is handled independently.  
-
----
-
-## `neverRejects` and `throwExceptionInCaller`
-
-If neverRejects is false, the child generator must handle the AwaitFormException
-
-If throwExceptionInCaller is true, the parent generator will receive an AwaitFormException  
-
-> [!TIP]
-> ⚙️ **Exception Behavior with `neverRejects` and `throwExceptionInCaller`**  
->  
-> - If `neverRejects` is set to `false`, each child generator will **attempt to throw an `AwaitFormException`** when the form is closed or rejected.    
->     If the exception is not caught inside the generator, it will **crash the server** with a long stack trace.   
->     Always make sure to catch `AwaitFormException` when using this setting.   
->
-> - If `neverRejects` is set to `true`, `AwaitFormOptions` will **silently terminate the child generator** when a form is closed or rejected.    
->     The affected generator coroutine will be forcibly interrupted without throwing, and no return value will be collected.  
->     You do not need to catch exceptions in this case, but be aware that the logic inside the generator will not complete.  
->  
->- If `throwExceptionInCaller` is `true`, `AwaitFormOptions` will **re-throw `AwaitFormException` in the parent `f2c()` coroutine** after applying `neverRejects` behavior.   
->    ⚠️ In this mode, generator return values will **not be available if the form is rejected or closed**,  
->    because the coroutine is terminated by the thrown `AwaitFormException`.  
->    If the form completes successfully, return values will still be collected as normal.
->    
-> - If `throwExceptionInCaller` is `false`, `AwaitFormException` will not be propagated to the parent coroutine.    
->     However, **`FormValidationException` may still occur** if the player submits invalid input.  
->  
-> 🔸 `FormValidationException` is used to signal **player-caused input validation errors**, such as leaving a required field blank.    
->    It does **not** include form construction errors.  
->
-> 🔸 If the form configuration itself is invalid (e.g., malformed option arrays, duplicate keys, missing inputs),    
->    an `AwaitFormOptionsInvalidValueException` will be thrown.    
->    This usually indicates a **programming bug** and should **not be caught in production logic**.  
->  
-> ✅ To suppress all exceptions:    
-> &nbsp;&nbsp;&nbsp;&nbsp;Set `neverRejects: true`, `throwExceptionInCaller: false`  
->  
-> ✅ To catch rejections **only** in the parent coroutine:    
-> &nbsp;&nbsp;&nbsp;&nbsp;Set `neverRejects: true`, `throwExceptionInCaller: true`  
-
-
-```php
-public function a(PlayerItemUseEvent $event) : void{
-    $player = $event->getPlayer();
-    Await::f2c(function() use ($player){
-        try{
-            yield from AwaitFormOptions::sendFormAsync(
-                player: $player,
-                title: "test",
-                options: [
-                    new HPFormOptions($player),
-                ],
-                neverRejects: false, // If false, the awaitFormOption propagates the AwaitFormException to the generator.
-                throwExceptionInCaller: true, // If true, awaitFormOption will throw an exception on the caller
-            );
-        }catch(FormValidationException|AwaitFormException){
-            // Form failed validation
-        }
-    });
-}
-```
-
----
+Each instance is handled independently.
 
 ## Standalone
 
@@ -292,8 +240,7 @@ public function a(PlayerItemUseEvent $event): void {
         title: "test",
         options: [
             new HPFormOptions($player),
-        ],
-        neverRejects: true,
+        ]
     );
 }
 ```
@@ -321,14 +268,24 @@ public function a(PlayerItemUseEvent $event): void {
                 buttons: [
                     new NameMenuOptions($player, ["f", "a"]),
                 ],
-                neverRejects: false,
-                throwExceptionInCaller: false,
             );
-        }catch(FormValidationException){
+        }catch(FormValidationException|AwaitFormOptionsParentException){
 
         }
     });
 }
+```
+
+```php
+use pocketmine\plugin\PluginBase;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerItemUseEvent;
+use SOFe\AwaitGenerator\Await;
+use DaisukeDaisuke\AwaitFormOptions\AwaitFormOptions;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException;
+use pocketmine\form\FormValidationException;
+use cosmicpe\awaitform\AwaitForm;
+
 ```
 
 ---
@@ -340,12 +297,14 @@ Even if multiple buttons share the same label or value, AwaitFormOptions resolve
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
 
-use cosmicpe\awaitform\Button;
+namespace test\test;
+
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\player\Player;
-use cosmicpe\awaitform\AwaitFormException;
+use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class NameMenuOptions extends MenuOptions{
 	public function __construct(private Player $player, private array $options){
@@ -359,8 +318,8 @@ class NameMenuOptions extends MenuOptions{
 			}
 			$test = yield from $this->request($test);
 			$this->player->sendMessage($test.", ".__FUNCTION__);
-		}catch(AwaitFormException $exception){
-
+		}catch(AwaitFormOptionsChildException $exception){
+			var_dump("optionA: " . $exception->getCode());
 		}
 	}
 
@@ -370,8 +329,8 @@ class NameMenuOptions extends MenuOptions{
 				[Button::simple("a"), "a"], //Even if you use duplicate keys, Awaitformoption will resolve it
 			]);
 			$this->player->sendMessage($test.", ".__FUNCTION__);
-		}catch(AwaitFormException $exception){
-
+		}catch(AwaitFormOptionsChildException $exception){
+			var_dump("optionB: " . $exception->getCode());
 		}
 	}
 
@@ -381,9 +340,9 @@ class NameMenuOptions extends MenuOptions{
 			$this->optionsA(),
 		];
 	}
-	
+
 	public function userDispose() : void{
-	    unset($this->player, $this->options);
+		unset($this->player, $this->options);
 	}
 }
 ```
@@ -409,9 +368,7 @@ public function a(PlayerItemUseEvent $event): void {
                     new NameMenuOptions($player, ["e", "f"]),
                     new NameMenuOptions($player, ["g", "h"]),
                     new NameMenuOptions($player, ["i", "j"]),
-                ],
-                neverRejects: false,
-                throwExceptionInCaller: false
+                ]
             );
         } catch (FormValidationException) {
         }
@@ -452,7 +409,6 @@ public function onUse(PlayerItemUseEvent $event): void{
     }
     Await::f2c(function() use ($player) {
         try {
-
             $entities = [];
             $world = $player->getWorld();
             foreach($world->getEntities() as $entity){
@@ -468,11 +424,9 @@ public function onUse(PlayerItemUseEvent $event): void{
                 content: "Please select an option",
                 buttons: [
                     new EntityNameMenuOptions($player, $entities),
-                ],
-                neverRejects: true,
-                throwExceptionInCaller: false
+                ]
             );
-        } catch (FormValidationException) {
+        } catch (FormValidationException|AwaitFormOptionsParentException) {
             // The form was cancelled or failed
         }
     });
@@ -484,22 +438,26 @@ public function onUse(PlayerItemUseEvent $event): void{
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\player\Player;
 use cosmicpe\awaitform\Button;
 use pocketmine\entity\Entity;
-use cosmicpe\awaitform\AwaitFormException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
-class EntityNameMenuOptions extends MenuOptions {
-	public function __construct(private Player $player, private array $entities) {}
+class EntityNameMenuOptions extends MenuOptions{
+	public function __construct(private Player $player, private array $entities){
+	}
 
-	public function chooseEntity(): \Generator {
-		try {
+	public function chooseEntity() : \Generator{
+		try{
 			$buttons = [];
 
-			foreach ($this->entities as $entity) {
+			foreach($this->entities as $entity){
 				// Display name, attach Entity instance
 				$buttons[] = [Button::simple($entity->getName()), $entity];
 			}
@@ -509,17 +467,17 @@ class EntityNameMenuOptions extends MenuOptions {
 
 			$this->player->sendMessage("You chose: " . $selected->getName());
 			return $selected;
-		} catch (AwaitFormException) {
+		}catch(AwaitFormOptionsChildException){
 			// Closed
 		}
 	}
 
-	public function getOptions(): array {
+	public function getOptions() : array{
 		return [$this->chooseEntity()];
 	}
-	
+
 	public function userDispose() : void{
-	    unset($this->player, $this->entities);
+		unset($this->player, $this->entities);
 	}
 }
 ```
@@ -553,12 +511,10 @@ public function onUse(PlayerItemUseEvent $event): void{
                 buttons: [
                     new SimpleButton("test1", 0),
                     new SimpleButton("test2", 2),
-                ],
-                neverRejects: true,
-                throwExceptionInCaller: false
+                ]
             );
             var_dump($selected);
-        } catch (FormValidationException) {
+        } catch (FormValidationException|AwaitFormOptionsParentException) {
             // The form was cancelled or failed
         }
     });
@@ -570,11 +526,14 @@ public function onUse(PlayerItemUseEvent $event): void{
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use cosmicpe\awaitform\Button;
 use cosmicpe\awaitform\AwaitFormException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class SimpleButton extends MenuOptions{
 	public function __construct(private string $name, private int $id){
@@ -586,7 +545,7 @@ class SimpleButton extends MenuOptions{
 				[Button::simple($this->name), 0]
 			);
 			return $this->id + $offset;
-		}catch(AwaitFormException){
+		}catch(AwaitFormOptionsChildException){
 			// Closed
 		}
 	}
@@ -598,7 +557,7 @@ class SimpleButton extends MenuOptions{
 		];
 	}
 	public function userDispose() : void{
-	    unset($this->name, $this->id);
+		unset($this->name, $this->id);
 	}
 }
 ```
@@ -678,12 +637,10 @@ public function onUse(PlayerItemUseEvent $event): void{
                 options: [
                     "input1" => new SimpleInput("test1", "test", "test", 0),
                     "input2" => new SimpleInput("test2", "test2", "test2", 0),
-                ],
-                neverRejects: true,
-                throwExceptionInCaller: false
+                ]
             );
             var_dump($selected);
-        } catch (FormValidationException) {
+        } catch (FormValidationException|AwaitFormOptionsParentException) {
             // The form was cancelled or failed
         }
     });
@@ -695,7 +652,9 @@ public function onUse(PlayerItemUseEvent $event): void{
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\FormOptions;
 use cosmicpe\awaitform\FormControl;
@@ -704,11 +663,17 @@ class SimpleInput extends FormOptions{
 	public function __construct(private string $text, private string $default, private string $placeholder, private int $id){
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function input(int $offset) : \Generator{
 		$output = yield from $this->request([FormControl::input($this->text, $this->default, $this->placeholder), $this->id + $offset]);
 		return $output[array_key_first($output)];
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function getOptions() : array{
 		return [
 			$this->input(0),
@@ -716,7 +681,7 @@ class SimpleInput extends FormOptions{
 		];
 	}
 	public function userDispose() : void{
-	    unset($this->text, $this->default, $this->placeholder, $this->id);
+		unset($this->text, $this->default, $this->placeholder, $this->id);
 	}
 }
 
@@ -771,14 +736,16 @@ public function onUse(PlayerItemUseEvent $event): void{
     }
 
     Await::f2c(function() use ($player, $forms) : \Generator{
-        yield from AwaitFormOptions::sendMenuAsync(
-            player: $player,
-            title: "Mob Terminator",
-            content: "Choose a mob to eliminate:",
-            buttons: $forms,
-            neverRejects: true,
-            throwExceptionInCaller: false
-        );
+        try{
+            yield from AwaitFormOptions::sendMenuAsync(
+                player: $player,
+                title: "Mob Terminator",
+                content: "Choose a mob to eliminate:",
+                buttons: $forms
+            );
+        }catch(AwaitFormOptionsParentException $exception){
+
+        }
     });
 }
 ```
@@ -788,17 +755,24 @@ public function onUse(PlayerItemUseEvent $event): void{
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\entity\Entity;
 use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class MobKillerForm extends MenuOptions{
 
-	public function __construct(private readonly Entity $entity){
+	public function __construct(private Entity $entity){
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function KillerForm() : \Generator{
 		yield from $this->request([
 			[Button::simple($this->entity->getName() . " (" . $this->entity->getId() . ")"), "a"],
@@ -806,17 +780,19 @@ class MobKillerForm extends MenuOptions{
 		$this->entity->kill();
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function getOptions() : array{
 		return [
 			$this->KillerForm(),
 		];
 	}
-	
+
 	public function userDispose() : void{
-	    unset($this->entity);
+		unset($this->entity);
 	}
 }
-
 ```
 
 ---
@@ -830,37 +806,38 @@ With AwaitFormOptions, this can be done cleanly by combining input validation an
 ![Image](https://github.com/user-attachments/assets/8e735c4f-c674-4e4e-8cde-79cbb8ab378f)
 
 ```php
-	public function onUse(PlayerItemUseEvent $event) : void{
-		$player = $event->getPlayer();
-		if(!$player->isSneaking()){
-			return;
-		}
-		Await::f2c(function() use ($player){
-			while(true){
-				try{
-					$result = yield from AwaitFormOptions::sendFormAsync(
-						player: $player,
-						title: "Confirmation",
-						options: ["output" => new ConfirmInputForm()],
-						neverRejects: true,
-						throwExceptionInCaller: true
-					);
-					//generator returns
-					$typed = $result["output"][0];
-					if(strtolower(trim($typed)) === "yes"){
-						$player->sendToastNotification("Confirmed", "Thanks for typing!");
-						break;
-					}
+public function onUse(PlayerItemUseEvent $event) : void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player){
+        while(true){
+            try{
+                $result = yield from AwaitFormOptions::sendFormAsync(
+                    player: $player,
+                    title: "Confirmation",
+                    options: ["output" => new ConfirmInputForm()]
+                );
+                //generator returns
+                $typed = $result["output"][0];
+                if(strtolower(trim($typed)) === "yes"){
+                    $player->sendToastNotification("Confirmed", "Thanks for typing!");
+                    break;
+                }
 
-				}catch(AwaitFormException $exception){
-					if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
-						break;
-					}
-				}
-				$player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
-			}
-		});
-	}
+            }catch(FormValidationException|AwaitFormOptionsParentException $exception){
+                if($exception instanceof FormValidationException){
+                    return;
+                }
+                if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
+                    break;
+                }
+            }
+            $player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
+        }
+    });
+}
 ```
 
 ### 🧪 Option Class: ConfirmInputForm
@@ -868,12 +845,18 @@ With AwaitFormOptions, this can be done cleanly by combining input validation an
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\FormOptions;
 use cosmicpe\awaitform\FormControl;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class ConfirmInputForm extends FormOptions{
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function confirmOnce(): \Generator {
 		[$input] = yield from $this->request([
 			FormControl::input("Type 'yes' to confirm", "yes", ""),
@@ -881,12 +864,15 @@ class ConfirmInputForm extends FormOptions{
 		return $input;
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function getOptions(): array {
 		return [$this->confirmOnce()];
 	}
-	
+
 	public function userDispose() : void{
-	    
+
 	}
 }
 ```
@@ -903,19 +889,26 @@ You can conditionally include different form options by selecting which yield ge
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+
+namespace test\test;
+
 
 use pocketmine\player\Player;
 use pocketmine\item\VanillaItems;
-use cosmicpe\awaitform\FormControl;
 use cosmicpe\awaitform\Button;
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class HpBasedFoodOptions extends MenuOptions{
 
-	public function __construct(private readonly Player $player){
+	public function __construct(private Player $player){
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function giveRawFish() : \Generator{
 		yield from $this->request([
 			Button::simple("§2You are full of strength! Enjoy this raw fish.§r"),
@@ -924,6 +917,9 @@ class HpBasedFoodOptions extends MenuOptions{
 		$this->player->sendToastNotification("Food Given", "Raw Fish");
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function giveCookedFish() : \Generator{
 		yield from $this->request([
 			Button::simple("§6You're moderately hurt. Take this cooked fish.§r"),
@@ -932,6 +928,9 @@ class HpBasedFoodOptions extends MenuOptions{
 		$this->player->sendToastNotification("Food Given", "Cooked Fish");
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function giveSteak() : \Generator{
 		yield from $this->request([
 			Button::simple("§4You're starving! Here's a juicy steak.§r"),
@@ -940,6 +939,9 @@ class HpBasedFoodOptions extends MenuOptions{
 		$this->player->sendToastNotification("Food Given", "Steak");
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function getOptions() : array{
 		$hp = $this->player->getHealth();
 
@@ -955,9 +957,9 @@ class HpBasedFoodOptions extends MenuOptions{
 		}
 		return $result;
 	}
-	
+
 	public function userDispose() : void{
-	    unset($this->player);
+		unset($this->player);
 	}
 }
 ```
@@ -965,29 +967,26 @@ class HpBasedFoodOptions extends MenuOptions{
 ### Usage
 
 ```php
-public function onUse(PlayerItemUseEvent $event): void{
-    $player = $event->getPlayer();
-    if(!$player->isSneaking()){
-        return;
-    }
-    Await::f2c(function() use ($player) {
-        try {
-            yield from AwaitFormOptions::sendMenuAsync(
-                player: $player,
-                title: "Food Assistance",
-                content: "Please select an option",
-                buttons: [
-                    new HpBasedFoodOptions($player),
-                ],
-                neverRejects: true,
-                throwExceptionInCaller: true
-            );
-        } catch (FormValidationException|AwaitFormException) {
-            // The form was cancelled or failed
-        }
-    });
-
-}
+	public function onUse(PlayerItemUseEvent $event): void{
+		$player = $event->getPlayer();
+		if(!$player->isSneaking()){
+			return;
+		}
+		Await::f2c(function() use ($player) {
+			try {
+				yield from AwaitFormOptions::sendMenuAsync(
+					player: $player,
+					title: "Food Assistance",
+					content: "Please select an option",
+					buttons: [
+						new HpBasedFoodOptions($player),
+					]
+				);
+			} catch (FormValidationException|AwaitFormOptionsParentException) {
+				// The form was cancelled or failed
+			}
+		});
+	}
 ```
 
 ### Form Available elements
@@ -1128,6 +1127,194 @@ PMServerUI (https://github.com/DavyCraft648/PMServerUI) is a great library for b
 However, AwaitFormOptions provides a more powerful and flexible system that supports deeply nested options, persistent context between form steps, and asynchronous flow control.  
 While it is technically possible to recreate something like PMServerUI using AwaitFormOptions, the reverse is not true. PMServerUI cannot handle advanced patterns such as dynamic generator-based form logic, branching flows, or contextual state within multi-step UIs.  
 
+---
+
+## Handling child generator exceptions with `@throws AwaitFormOptionsChildException`
+
+This section explains how exceptions thrown from **child generators** are handled in AwaitFormOptions, how `@throws AwaitFormOptionsChildException` interacts with phpstan, and how branching by error code works in practice.
+
+The goal is to make exception flow explicit, predictable, and statically analyzable, without hiding important runtime behavior.
+
+---
+
+## Basic idea 💡
+
+* Child generator methods (those using `yield from $this->request(...)`) may fail for several reasons:
+
+  * the player closed the form
+  * the player quit the server
+  * validation failed
+  * the coroutine was aborted internally
+
+* These failures are surfaced as exceptions derived from the AwaitFormOptions exception hierarchy:
+
+  * `AwaitFormOptionsChildException` (child-side)
+
+    * `ERR_COROUTINE_ABORTED = 300001`
+  * `AwaitFormOptionsParentException` (parent-side)
+
+    * `ERR_VERIFICATION_FAILED = 200001`
+  * `AwaitFormException` (base AwaitForm errors)
+
+    * `ERR_PLAYER_REJECTED = 100002`
+    * `ERR_PLAYER_QUIT = 100003`
+    * `ERR_VALIDATION_FAILED = 100001`
+
+* By documenting child generators with `@throws AwaitFormOptionsChildException`, phpstan understands that:
+
+  * the exception may propagate
+  * callers must either catch it or declare it themselves
+
+This keeps both humans and static analysis tools aligned 👍
+
+---
+
+## Annotating a child generator 🧩
+
+Any generator that can throw a child exception should declare it explicitly:
+
+```php
+/**
+ * @throws \DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException
+ */
+public function confirmOnce(): \Generator {
+    [$input] = yield from $this->request([
+        FormControl::input("Type 'yes' to confirm", "yes", ""),
+    ]);
+
+    return $input;
+}
+```
+
+Why this matters:
+
+* phpstan treats the exception as part of the method contract
+* silent exception swallowing is avoided
+* the control flow becomes explicit and reviewable
+
+---
+
+## Catching and branching by error code 🎯
+
+`AwaitFormOptionsChildException` carries a numeric error code.
+This allows fine-grained branching without relying on exception type explosions.
+
+### Example: handling child exceptions locally
+
+```php
+/**
+ * @throws \DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException
+ */
+use pocketmine\form\FormValidationException;
+
+public function editName(): \Generator {
+    try {
+        [$name] = yield from $this->request([
+            FormControl::input("Enter new name", "player", ""),
+        ]);
+
+        $this->player->setName($name);
+        return $name;
+
+    } catch (\DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException $e) {
+        switch ($e->getCode()) {
+            case AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED:
+                // internal abort (race, shutdown, etc.)
+                $this->player->sendMessage("Operation aborted by server");
+                break;
+
+            case \cosmicpe\awaitform\AwaitFormException::ERR_PLAYER_REJECTED:
+                // form closed
+                $this->player->sendMessage("Form was closed");
+                break;
+
+            case \cosmicpe\awaitform\AwaitFormException::ERR_PLAYER_QUIT:
+                // player left the server
+                // usually nothing to do here
+                break;
+
+            default:
+                //If you throw an AwaitFormOptionsChildException it will be silently ignored by the system, so if you want to crash the server use any other exception
+                throw RuntimeException("Unexpected error");
+        }
+
+        return null;
+    }catch(FormValidationException $e){
+        //form validation failed
+    }
+}
+```
+
+Notes:
+
+* Even though you catch `AwaitFormOptionsChildException`,
+  the error code may originate from `AwaitFormException`.
+* This design allows a **single catch block** with **precise branching** ✨
+
+---
+
+
+If an exception is thrown, the coroutine flow is immediately aborted.
+Child-level exceptions are thrown from `request()` and are always swallowed when they are instances of `AwaitFormOptionsChildException`.
+Parent-level exceptions are thrown from `sendFormAsync()` or `sendMenuAsync()` and must be handled by the parent coroutine.
+Once an exception occurs, return values and child generator results are invalid.
+
+
+## Parent Generator Exception Handling
+
+```php
+Await::f2c(function() use ($player): \Generator {
+    try {
+        yield from AwaitFormOptions::sendFormAsync(
+            player: $player,
+            title: "Confirm action",
+            options: [
+                new ConfirmInputForm($player),
+            ],
+        );
+
+    } catch (AwaitFormOptionsParentException $e) {
+        if ($e->getCode() === AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED) {
+            $player->sendMessage("Verification failed");
+            return;
+        }
+
+        // other parent-level failures
+        var_dump($e->getMessage());
+    }
+});
+```
+
+---
+
+## phpstan behavior 🧠
+
+* When `@throws AwaitFormOptionsChildException` is present:
+
+  * phpstan requires callers to acknowledge it
+  * missing `try/catch` becomes a static error
+
+* If the exception is intentionally allowed to propagate freely:
+
+  * it can be configured as *unchecked* in phpstan
+  * this suppresses enforcement but also removes safety guarantees ⚠️
+
+In general, explicit `@throws` + explicit handling is recommended.
+
+---
+
+## Summary ✅
+
+* Use `@throws AwaitFormOptionsChildException` on child generators
+* Catch child exceptions where user feedback or recovery is meaningful
+* Branch by `getCode()` instead of multiplying exception classes
+* Rethrow when the decision belongs to the parent
+* Avoid silently swallowing exceptions, both at runtime and in phpstan
+
+This approach keeps coroutine-based form handling **predictable**, **type-aware**, and **maintainable** over time 🚀
+
+---
+
 # 1.1.0 Futures
 ## Nested Options
 
@@ -1142,50 +1329,55 @@ Since version 1.1.0, this is now easy to achieve using nested options!
 ### main
 
 ```php
-	public function onUse(PlayerItemUseEvent $event) : void{
-		$player = $event->getPlayer();
-		if(!$player->isSneaking()){
-			return;
-		}
-		Await::f2c(function() use ($player){
-			while(true){
-				try{
-					$result = yield from AwaitFormOptions::sendFormAsync(
-						player: $player,
-						title: "Confirmation",
-						options: ["output" => new ConfirmInputForm()],
-						neverRejects: true,
-						throwExceptionInCaller: true
-					);
-					var_dump($result);
-					//generator returns
-					$typed = $result["output"]["confirm"];
-					if(strtolower(trim($typed)) === "yes"){
-						$player->sendToastNotification("Confirmed", "Thanks for typing!");
-						break;
-					}
+public function onUse(PlayerItemUseEvent $event) : void{
+    $player = $event->getPlayer();
+    if(!$player->isSneaking()){
+        return;
+    }
+    Await::f2c(function() use ($player){
+        while(true){
+            try{
+                $result = yield from AwaitFormOptions::sendFormAsync(
+                    player: $player,
+                    title: "Confirmation",
+                    options: ["output" => new ConfirmInputForm()]
+                );
+                var_dump($result);
+                //generator returns
+                $typed = $result["output"]["confirm"];
+                if(strtolower(trim($typed)) === "yes"){
+                    $player->sendToastNotification("Confirmed", "Thanks for typing!");
+                    break;
+                }
 
-				}catch(AwaitFormException $exception){
-					if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
-						break;
-					}
-				}
-				$player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
-			}
-		});
-	}
+            }catch(AwaitFormOptionsParentException $exception){
+                if($exception->getCode() !== AwaitFormException::ERR_PLAYER_REJECTED){
+                    break;
+                }
+            }
+            $player->sendToastNotification("You must type 'yes'.", "please Type 'Yes'");
+        }
+    });
+}
 ```
 
 ### ConfirmInputForm
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+declare(strict_types=1);
+
+
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\FormOptions;
 use cosmicpe\awaitform\FormControl;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class ConfirmInputForm extends FormOptions{
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function confirmOnce(): \Generator {
 		[$input] = yield from $this->request([
 			FormControl::input("Type 'yes' to confirm", "yes", ""),
@@ -1193,15 +1385,18 @@ class ConfirmInputForm extends FormOptions{
 		return $input;
 	}
 
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
 	public function getOptions(): array {
 		return [
 			"entity" => new SimpleInput("nested!", "nested", "nested", 0),
 			"confirm" => $this->confirmOnce(),
 		];
 	}
-	
+
 	public function userDispose() : void{
-	    
+
 	}
 }
 ```
@@ -1240,13 +1435,17 @@ This allows your code block to pause until all other forms are either completed,
 ```php
 <?php
 
-namespace daisukedaisuke\test;
+namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\FormOptions;
 use cosmicpe\awaitform\FormControl;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class ConfirmInputForm extends FormOptions{
-	public function confirmOnce(): \Generator {
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
+	public function confirmOnce() : \Generator{
 		[$input] = yield from $this->request([
 			FormControl::input("Type 'yes' to confirm", "yes", ""),
 		]);
@@ -1254,18 +1453,25 @@ class ConfirmInputForm extends FormOptions{
 		return $input;
 	}
 
-	public function getOptions(): array {
+	/**
+	 * @throws AwaitFormOptionsChildException
+	 */
+	public function getOptions() : array{
 		return [
 			"entity" => new SimpleInput("nested!", "nested", "nested", 0),
 			"confirm" => $this->confirmOnce(),
 		];
 	}
-	
+
 	public function userDispose() : void{
-	    
+
 	}
 }
 ```
+
+<details>
+
+<summary>Now Discontinued Future</summary>
 
 ## AwaitFromOptionsAbortException
 Due to the processing improvements in 1.1.0, all awaitformoption menus now receive AwaitFromOptionsAbortException equally
@@ -1310,6 +1516,9 @@ class HpBasedFoodOptions extends MenuOptions{
 }
 ```
 
+</details>
+
+
 ## 1.3.0 Future
 ### schedule
 Want to use some await before sending a request? Now you can with schedule() in 1.3.0!  
@@ -1324,6 +1533,9 @@ use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use SOFe\AwaitGenerator\RaceLostException;
 
 class HpBasedFoodOptions extends MenuOptions{
+    /**
+     * @throws AwaitFormOptionsChildException
+     */
 	public function giveRawFish1() : \Generator{
 	    $this->schedule(); // This ensures that the awaitformoptions coroutine is temporarily suspended
 	    //A few awaits
@@ -1334,6 +1546,9 @@ class HpBasedFoodOptions extends MenuOptions{
 		}
 	}
 
+    /**
+     * @throws AwaitFormOptionsChildException
+     */
 	public function getOptions() : array{
 		return [
 			$this->giveRawFish1(),
@@ -1361,3 +1576,70 @@ Fixed gc leak (memory leak) when form is abandoned　　
 ## 2.0.10 Fix
 
 To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer used in `AwaitFromOptions`. Instead, if a coroutine is forcibly terminated, an `AwaitFromOptionsAbortException` is now thrown. This change improves consistency
+
+## 3.0.0 Future 📌
+
+* ➕ **AwaitFormOptionsParentException** has been added.
+  This exception receives all non-fatal exceptions that occur during normal execution and may propagate to the parent coroutine.
+  As such, it must be caught using a try-catch block, in the same manner as child-side exception handling.
+
+* ➕ **AwaitFormOptionsChildException** has been added.
+  This exception receives all non-fatal exceptions occurring on the child generator, such as disconnections, rejections, or coroutine aborts.
+  Existing **AwaitFormException** error codes continue to be used.
+
+* ❌ Dependency-related exception **AwaitFormException** is **no longer** used at the API level.
+
+* ❌ The `neverRejects` and `throwExceptionInCaller` methods have been removed, as they cause severe phpstan warnings.
+  Use try-catch instead.
+
+* 🧨 **AwaitFormOptionsExpectedCrashException** has been added.
+  This exception is intended to notify developers of invalid code structure or configuration mistakes and is recommended **not** to be caught.
+
+* 🔗 **AwaitFormOptionsInvalidValueException** is now a subclass of **AwaitFormOptionsExpectedCrashException**.
+
+* ❌ **AwaitFormOptionsAbortException** has been removed.
+  It has been replaced by
+  `ERR_VERIFICATION_FAILED` in **AwaitFormOptionsChildException** and **AwaitFormOptionsParentException**.
+
+* 🧩 Some system-level methods in `DaisukeDaisuke/AwaitFormOptions/FormBridgeTrait.php`, which is an internal-use-only class and not part of the public API, have been changed to `protected`.
+  This reduces IDE completion noise and improves productivity when writing code.
+
+* 🛠️ Compatibility with **phpstan** has been improved.
+  Depending on the phpstan configuration, missing try-catch blocks can now be detected.
+  To enable this behavior, the following phpstan configuration is required:
+
+  ```yaml
+  parameters:
+    level: 5
+    exceptions:
+      checkedExceptionClasses:
+        - RuntimeException
+      uncheckedExceptionClasses:
+        - DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException
+  ```
+  * No more headaches over troublesome noise errors
+
+* ⚠️ All exceptions, including user rejection, user logout, and cases where no option is selected, are now unconditionally propagated to both child and parent coroutines.
+  As a result, all **AwaitGenerator** coroutines must now correctly implement try-catch handling.
+
+  * The **parent coroutine** must implement:
+
+    ```php
+    } catch (FormValidationException | AwaitFormOptionsParentException) {
+    ```
+
+  * The **child coroutine** must implement:
+
+    ```php
+    } catch (AwaitFormOptionsChildException $e) {
+    ```
+
+    and may optionally branch logic based on error codes such as
+    `AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED` or
+    `AwaitFormException::ERR_PLAYER_REJECTED`.
+
+  * ✨ These changes improve consistency and make exceptional-flow handling easier to implement.
+
+* 🧹 Addressed PHP 8.4 deprecations.
+
+* ❌ The `neverRejects` parameter of the standalone functions `sendMenu` and `sendForm` has been removed for the same reasons described above.
