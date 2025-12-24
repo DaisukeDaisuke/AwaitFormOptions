@@ -7,6 +7,10 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 use cosmicpe\awaitform\AwaitForm;
 use cosmicpe\awaitform\AwaitFormException;
 use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException;
 use pocketmine\form\FormValidationException;
 use pocketmine\player\Player;
 use pocketmine\utils\Utils;
@@ -30,20 +34,20 @@ class AwaitFormOptions{
 	 * @param array<FormOptions> $options
 	 * @throws \Throwable
 	 */
-	public static function sendForm(Player $player, string $title, array $options, bool $neverRejects = false) : void{
-		Await::f2c(function() use ($neverRejects, $options, $title, $player){
+	public static function sendForm(Player $player, string $title, array $options) : void{
+		Await::f2c(function() use ($options, $title, $player){
 			try{
-				yield from self::sendFormAsync($player, $title, $options, $neverRejects, false);
-			}catch(FormValidationException|AwaitFormException){
+				yield from self::sendFormAsync($player, $title, $options);
+			}catch(FormValidationException|AwaitFormOptionsParentException){
 			}
 		});
 	}
 
 	/**
 	 * @param array<FormOptions> $options Awaitable form option providers
-	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
+	 * @throws FormValidationException|AwaitFormOptionsParentException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
-	public static function sendFormAsync(Player $player, string $title, array $options, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
+	public static function sendFormAsync(Player $player, string $title, array $options) : \Generator{
 		$bridge = new RequestResponseBridge();
 		try{
 			Utils::validateArrayValueType($options, static function(FormOptions $value){
@@ -98,7 +102,7 @@ class AwaitFormOptions{
 							if(array_is_list($item) && count($item) !== 2){
 								$bridge->reject(
 									$id,
-									new \InvalidArgumentException(
+									new AwaitFormOptionsExpectedCrashException(
 										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
 										" (key: " . $key . "). " .
 										"Ensure that your form returns an array like [Button, SelectedKey]. " .
@@ -114,7 +118,7 @@ class AwaitFormOptions{
 					// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
 					if(!is_scalar($key) || is_object($key)){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new \InvalidArgumentException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
+						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
 						return [];
 					}
 					$keys[] = $key;
@@ -137,27 +141,17 @@ class AwaitFormOptions{
 
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
-				if(!$neverRejects){
-					$bridge->rejectsAll($awaitFormException);
-				}else{
-					/*
-					 * This is a workaround to ensure that all reject callbacks are executed,
-					 * even if some of them throw exceptions.
-					 * The built-in rejectsAll() method stops processing if any reject() call
-					 * does *not* throw, which is arguably a bug.
-					 * Without this workaround, AwaitFormOptions can cause issues with garbage collection. :(
-					 */
-					$bridge->abortAll();
+				try{
+					$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				}catch(AwaitFormOptionsChildException $exception){
+					throw new AwaitFormOptionsExpectedCrashException($exception->getMessage(), $exception->getCode(), $exception);
 				}
-				if($throwExceptionInCaller){
-					throw $awaitFormException;
-				}
+				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
+			}catch(FormValidationException $formValidationException){
+				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
+			}catch(AwaitFormOptionsChildException $exception){
+				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
-			/*!$neverRejects === true => return []*/
-			if(count($options_keys) == count($bridge->getReturns())){
-				return array_combine($options_keys, $bridge->getReturns());
-			}
-			return [];
 		}finally{
 			foreach($needDispose as $item){
 				$item->dispose();
@@ -172,11 +166,11 @@ class AwaitFormOptions{
 	 * @param array<MenuOptions> $buttons
 	 * @throws \Throwable
 	 */
-	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false) : void{
-		Await::f2c(function() use ($neverRejects, $content, $buttons, $title, $player){
+	public static function sendMenu(Player $player, string $title, string $content, array $buttons) : void{
+		Await::f2c(function() use ($content, $buttons, $title, $player){
 			try{
-				yield from self::sendMenuAsync($player, $title, $content, $buttons, $neverRejects, false);
-			}catch(FormValidationException|AwaitFormException){
+				yield from self::sendMenuAsync($player, $title, $content, $buttons);
+			}catch(FormValidationException|AwaitFormOptionsParentException){
 			}
 		});
 	}
@@ -184,9 +178,9 @@ class AwaitFormOptions{
 	/**
 	 * @param array<MenuOptions> $buttons Awaitable menu option providers
 	 * @return \Generator<mixed>
-	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
+	 * @throws FormValidationException|AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
-	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false, bool $throwExceptionInCaller = false) : \Generator{
+	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons) : \Generator{
 		$bridge = new RequestResponseBridge();
 
 		try{
@@ -251,7 +245,7 @@ class AwaitFormOptions{
 							if(array_is_list($item) && count($item) !== 2){
 								$bridge->reject(
 									$id,
-									new \InvalidArgumentException(
+									new AwaitFormOptionsExpectedCrashException(
 										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
 										" (key: " . $key . "). " .
 										"Ensure that your form returns an array like [Button, SelectedKey]. " .
@@ -266,7 +260,7 @@ class AwaitFormOptions{
 					}
 					if(!$item instanceof Button){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new \InvalidArgumentException("Button is required, see also AwaitFormOptions::sendMenuAsync()"));
+						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("Button is required, see also AwaitFormOptions::sendMenuAsync()"));
 					}
 					$flatButtons[$counter++] = $item;
 					$keys[$count++] = $key;
@@ -293,25 +287,19 @@ class AwaitFormOptions{
 					}
 				}
 			}catch(AwaitFormException $awaitFormException){
-				if(!$neverRejects){
-					$bridge->rejectsAll($awaitFormException);
-				}else{
-					/*
-					 * This is a workaround to ensure that all reject callbacks are executed,
-					 * even if some of them throw exceptions.
-					 * The built-in rejectsAll() method stops processing if any reject() call
-					 * does *not* throw, which is arguably a bug.
-					 * Without this workaround, AwaitFormOptions can cause issues with garbage collection. :(
-					 */
-					$bridge->abortAll();
+				try{
+					$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				}catch(AwaitFormOptionsChildException $exception){
+					throw new AwaitFormOptionsExpectedCrashException($exception->getMessage(), $exception->getCode(), $exception);
 				}
-				if($throwExceptionInCaller){
-					throw $awaitFormException;
-				}
-				return null;
+				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
+			}catch(FormValidationException $formValidationException){
+				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
+			}catch(AwaitFormOptionsChildException $exception){
+				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
 			// 該当しなかった場合はフォーム不正とみなす
-			throw new FormValidationException("An invalid button selection was made");
+			throw new AwaitFormOptionsParentException("An invalid button selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 		}finally{
 			foreach($needDispose as $item){
 				$item->dispose();
