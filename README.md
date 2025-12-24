@@ -1162,8 +1162,7 @@ The goal is to make exception flow explicit, predictable, and statically analyza
 
 * By documenting child generators with `@throws AwaitFormOptionsChildException`, phpstan understands that:
 
-  * the exception may propagate
-  * callers must either catch it or declare it themselves
+  * This coroutine does not catch exceptions
 
 This keeps both humans and static analysis tools aligned 👍
 
@@ -1184,12 +1183,20 @@ public function confirmOnce(): \Generator {
 
     return $input;
 }
+
+/**
+ * @throws \DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException
+ */
+public function getOptions() : array{
+    return [
+        $this->KillerForm(),
+    ];
+}
 ```
 
 Why this matters:
 
 * phpstan treats the exception as part of the method contract
-* silent exception swallowing is avoided
 * the control flow becomes explicit and reviewable
 
 ---
