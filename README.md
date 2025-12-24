@@ -1656,6 +1656,6 @@ To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer u
 
 * 🧹 Addressed PHP 8.4 deprecations.
 
-* 🔇 `AwaitFormOptionsChildException`s leaking from child coroutines are now silently ignored and no longer cause server crashes.
+* 🔇 AwaitFormOptionsChildException's leaking from child coroutines are now silently ignored and no longer cause server crashes.
 
 * ❌ The `neverRejects` parameter of the standalone functions `sendMenu` and `sendForm` has been removed for the same reasons described above.
