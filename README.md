@@ -1626,7 +1626,8 @@ To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer u
     level: 5
     exceptions:
       checkedExceptionClasses:
-        - RuntimeException
+        - cosmicpe\awaitform\AwaitFormException\AwaitFormOptionsParentException
+        - cosmicpe\awaitform\AwaitFormException\AwaitFormOptionsChildException
       uncheckedExceptionClasses:
         - DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException
   ```
@@ -1655,6 +1656,6 @@ To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer u
 
 * 🧹 Addressed PHP 8.4 deprecations.
 
-* 🔇 All child generators now silently ignore AwaitFormOptionsChildExceptions that are thrown and no longer crash the server.
+* 🔇 `AwaitFormOptionsChildException`s leaking from child coroutines are now silently ignored and no longer cause server crashes.
 
 * ❌ The `neverRejects` parameter of the standalone functions `sendMenu` and `sendForm` has been removed for the same reasons described above.
