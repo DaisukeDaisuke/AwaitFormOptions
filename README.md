@@ -129,7 +129,7 @@ Each option will yield from `$this->request($form);` and wait for the response. 
 > Additionally, the following exceptions may be thrown from `request()`:
 > - `AwaitFormOptionsInvalidValueException`: When `request()` is called more than once in the same generator.
 > - `AwaitFormOptionsInvalidValueException`: When the provided form/button array is invalid.
-> - `AwaitFormException`: If the player rejects the form, input is invalid, or the player logs out.
+> - `AwaitFormOptionsChildException`: If the player rejects the form, input is invalid, or the player logs out.
 >
 > The try-catch in the child generator may be omitted, but is not recommended.
 
@@ -253,8 +253,7 @@ AwaitFormOptions also supports `menu` interactions.
 Unselected menu options are discarded and not executed.  
 
 > [!TIP]
-> When the form is completed, any button generators that were not selected will equally receive a `SOFe\AwaitGenerator\RaceLostException` (since 1.1.0)  
-> RaceLostException is only raised when the form is completed, and if the form is rejected you will receive an AwaitFormException depending on neverRejects  
+> When the form is completed, any button generators that were not selected will equally receive a `AwaitFormOptionsChildException` (since 3.0.1)
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
@@ -577,11 +576,6 @@ NULL
 
 ## Form Example
 Forms can retrieve the return value of a generator in the same way, note that in this case it maps to the keys of the option array.
-
-> [!NOTE]
-> Note that when `$neverRejects` is true, child generator processing is forcefully terminated, so an empty array is returned if an error occurs in the form  
-> ~~sendFormAsync will collect all generator return values even if the form fails as long as neverRejects is false. Note that this is different behavior from menu.~~  
-> Due to the memory leak prevention measures in 2.0.1, it is no longer collected or null is returned.
 
 > [!TIP]
 > In `sendFormAsync()`, the return value preserves:  
