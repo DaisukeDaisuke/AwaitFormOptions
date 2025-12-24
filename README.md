@@ -1602,7 +1602,7 @@ To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer u
 
 * ❌ Dependency-related exception **AwaitFormException** is **no longer** used at the API level.
 
-* ❌ The `neverRejects` and `throwExceptionInCaller` methods have been removed, as they cause severe phpstan warnings.
+* ❌ The `neverRejects` and `throwExceptionInCaller` argument have been removed, as they cause severe phpstan warnings.
   Use try-catch instead.
 
 * 🧨 **AwaitFormOptionsExpectedCrashException** has been added.
