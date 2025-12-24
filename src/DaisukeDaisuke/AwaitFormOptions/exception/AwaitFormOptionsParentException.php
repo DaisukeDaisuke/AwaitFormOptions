@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace DaisukeDaisuke\AwaitFormOptions\exception;
 
 use cosmicpe\awaitform\AwaitFormException;

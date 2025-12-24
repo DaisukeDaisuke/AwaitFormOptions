@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace DaisukeDaisuke\AwaitFormOptions;
 
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsAbortException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExcption;
 use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\AwaitException;
 use SOFe\AwaitGenerator\Channel;
 use function array_combine;
 use function count;
 use function krsort;
-use cosmicpe\awaitform\AwaitFormException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsAbortException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExcption;
 
 class RequestResponseBridge{
 	private int $nextId = 0;
@@ -44,7 +43,7 @@ class RequestResponseBridge{
 	 *
 	 * @throws AwaitFormOptionsChildException
 	 */
-	public function request(mixed $value, int $reserved = null) : \Generator{
+	public function request(mixed $value, ?int $reserved = null) : \Generator{
 		$id = $this->nextId++;
 
 		$this->pendingRequest[$id] = new Channel();
@@ -161,8 +160,8 @@ class RequestResponseBridge{
 	 *
 	 * @return bool Returns true if the operation was successfully aborted; false otherwise.
 	 */
-	public function abort(int $id, AwaitFormOptionsChildException $throwable = null) : bool{
-		$throwable ??=  new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED);
+	public function abort(int $id, ?AwaitFormOptionsChildException $throwable = null) : bool{
+		$throwable ??= new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED);
 		try{
 			return $this->reject($id, $throwable);
 		}catch(AwaitFormOptionsChildException){
@@ -180,11 +179,9 @@ class RequestResponseBridge{
 	 * However, if the exception is not caught within the child generator, it will propagate (leak)
 	 * to the parent coroutine (generator).
 	 *
-	 * @param int        $id        The unique identifier for the request to reject.
+	 * @param int                      $id        The unique identifier for the request to reject.
 	 * @param AwaitFormOptionsExcption $throwable The throwable used to reject the request.
 	 * @return bool Returns true if a rejection handler was found and successfully invoked; otherwise, returns false.
-	 *
-	 * @throws AwaitFormOptionsExcption
 	 */
 	public function reject(int $id, AwaitFormOptionsExcption $throwable) : bool{
 		try{

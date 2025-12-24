@@ -7,6 +7,10 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 use cosmicpe\awaitform\AwaitForm;
 use cosmicpe\awaitform\AwaitFormException;
 use cosmicpe\awaitform\Button;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException;
 use pocketmine\form\FormValidationException;
 use pocketmine\player\Player;
 use pocketmine\utils\Utils;
@@ -20,10 +24,6 @@ use function count;
 use function is_array;
 use function is_object;
 use function is_scalar;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsParentException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
 
 class AwaitFormOptions{
 	final private function __construct(){
@@ -34,18 +34,18 @@ class AwaitFormOptions{
 	 * @param array<FormOptions> $options
 	 * @throws \Throwable
 	 */
-	public static function sendForm(Player $player, string $title, array $options, bool $neverRejects = false) : void{
-		Await::f2c(function() use ($neverRejects, $options, $title, $player){
+	public static function sendForm(Player $player, string $title, array $options) : void{
+		Await::f2c(function() use ($options, $title, $player){
 			try{
-				yield from self::sendFormAsync($player, $title, $options, $neverRejects, false);
-			}catch(FormValidationException|AwaitFormException){
+				yield from self::sendFormAsync($player, $title, $options);
+			}catch(FormValidationException|AwaitFormOptionsParentException){
 			}
 		});
 	}
 
 	/**
 	 * @param array<FormOptions> $options Awaitable form option providers
-	 * @throws FormValidationException|AwaitFormException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
+	 * @throws FormValidationException|AwaitFormOptionsParentException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -141,7 +141,11 @@ class AwaitFormOptions{
 
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
-				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				try{
+					$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				}catch(AwaitFormOptionsChildException $exception){
+					throw new AwaitFormOptionsExpectedCrashException($exception->getMessage(), $exception->getCode(), $exception);
+				}
 				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
 			}catch(FormValidationException $formValidationException){
 				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
@@ -162,8 +166,8 @@ class AwaitFormOptions{
 	 * @param array<MenuOptions> $buttons
 	 * @throws \Throwable
 	 */
-	public static function sendMenu(Player $player, string $title, string $content, array $buttons, bool $neverRejects = false) : void{
-		Await::f2c(function() use ($neverRejects, $content, $buttons, $title, $player){
+	public static function sendMenu(Player $player, string $title, string $content, array $buttons) : void{
+		Await::f2c(function() use ($content, $buttons, $title, $player){
 			try{
 				yield from self::sendMenuAsync($player, $title, $content, $buttons);
 			}catch(FormValidationException|AwaitFormException){
@@ -283,7 +287,11 @@ class AwaitFormOptions{
 					}
 				}
 			}catch(AwaitFormException $awaitFormException){
-				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				try{
+					$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
+				}catch(AwaitFormOptionsChildException $exception){
+					throw new AwaitFormOptionsExpectedCrashException($exception->getMessage(), $exception->getCode(), $exception);
+				}
 				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
 			}catch(FormValidationException $formValidationException){
 				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);

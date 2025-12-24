@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace DaisukeDaisuke\AwaitFormOptions;
 
-use BadFunctionCallException;
-use cosmicpe\awaitform\AwaitFormException;
 use cosmicpe\awaitform\Button;
 use cosmicpe\awaitform\FormControl;
-use InvalidArgumentException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
 use pocketmine\utils\Utils;
 use function array_key_first;
 use function array_key_last;
 use function count;
 use function debug_backtrace;
 use const DEBUG_BACKTRACE_IGNORE_ARGS;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
@@ -30,7 +27,7 @@ trait FormBridgeTrait{
 	 */
 	final public function setBridge(RequestResponseBridge $bridge) : void{
 		if($this->isDisposed()){
-			throw new AwaitFormOptionsInvalidValueException("Option reuse detected, class: ". static::class);
+			throw new AwaitFormOptionsInvalidValueException("Option reuse detected, class: " . static::class);
 		}
 		$this->bridge = $bridge;
 	}
@@ -61,7 +58,7 @@ trait FormBridgeTrait{
 	 */
 	final protected function schedule() : void{
 		if($this->reservesId !== null){
-			throw new AwaitFormOptionsExpectedCrashException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks, class: ". static::class);
+			throw new AwaitFormOptionsExpectedCrashException("Maybe you called \$this->schedule() twice? This is not allowed to prevent deadlocks, class: " . static::class);
 		}
 		$this->reservesId = $this->bridge->schedule();
 	}
