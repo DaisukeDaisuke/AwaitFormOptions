@@ -1612,7 +1612,7 @@ To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer u
 
 * ❌ **AwaitFormOptionsAbortException** has been removed.
   It has been replaced by
-  `ERR_VERIFICATION_FAILED` in **AwaitFormOptionsChildException** and **AwaitFormOptionsParentException**.
+  `ERR_COROUTINE_ABORTED` in **AwaitFormOptionsChildException**.
 
 * 🧩 Some system-level methods in `DaisukeDaisuke/AwaitFormOptions/FormBridgeTrait.php`, which is an internal-use-only class and not part of the public API, have been changed to `protected`.
   This reduces IDE completion noise and improves productivity when writing code.
