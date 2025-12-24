@@ -1582,7 +1582,13 @@ Fixed gc leak (memory leak) when form is abandoned　　
 
 ## 2.0.10 Fix
 
+<details>
+
+<summary>Now Discontinued Future</summary>
+
 To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer used in `AwaitFromOptions`. Instead, if a coroutine is forcibly terminated, an `AwaitFromOptionsAbortException` is now thrown. This change improves consistency
+
+</details>
 
 ## 3.0.0 Future 📌
 
