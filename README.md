@@ -1484,26 +1484,25 @@ namespace daisukedaisuke\test;
 
 use cosmicpe\awaitform\Button;
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
-use SOFe\AwaitGenerator\RaceLostException;
 
 class HpBasedFoodOptions extends MenuOptions{
-
+    /**
+     * @throws AwaitFormOptionsChildException
+     */
 	public function giveRawFish() : \Generator{
-		try{
-			yield from $this->request([Button::simple("a"), 0]);
-		}catch(RaceLostException){
-			var_dump("!!");
-		}
+		yield from $this->request([Button::simple("a"), 0]);
 	}
 
+    /**
+     * @throws AwaitFormOptionsChildException
+     */
 	public function giveRawFish1() : \Generator{
-		try{
-			yield from $this->request([Button::simple("a"), 0]);
-		}catch(RaceLostException){
-			var_dump("??");
-		}
+		yield from $this->request([Button::simple("a"), 0]);
 	}
 
+    /**
+     * @throws AwaitFormOptionsChildException
+     */
 	public function getOptions() : array{
 		return [
 			$this->giveRawFish(),
@@ -1531,7 +1530,6 @@ namespace daisukedaisuke\test;
 
 use cosmicpe\awaitform\Button;
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
-use SOFe\AwaitGenerator\RaceLostException;
 
 class HpBasedFoodOptions extends MenuOptions{
     /**
@@ -1540,11 +1538,7 @@ class HpBasedFoodOptions extends MenuOptions{
 	public function giveRawFish1() : \Generator{
 	    $this->schedule(); // This ensures that the awaitformoptions coroutine is temporarily suspended
 	    //A few awaits
-		try{
-			yield from $this->request([Button::simple("a"), 0]); // Here, the suspension is lifted
-		}catch(RaceLostException){
-			var_dump("??");
-		}
+	    yield from $this->request([Button::simple("a"), 0]); // Here, the suspension is lifted
 	}
 
     /**
