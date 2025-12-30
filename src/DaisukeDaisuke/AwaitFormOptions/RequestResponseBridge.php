@@ -124,7 +124,6 @@ class RequestResponseBridge{
 	 * use abortAll() instead.
 	 *
 	 * @param AwaitFormOptionsChildException $throwable The exception to pass to each reject handler.
-	 * @throws AwaitFormOptionsChildException
 	 */
 	public function rejectsAll(AwaitFormOptionsChildException $throwable) : void{
 		foreach($this->rejects as $id => $reject){

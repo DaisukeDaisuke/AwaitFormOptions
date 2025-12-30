@@ -141,13 +141,10 @@ class AwaitFormOptions{
 
 				return array_combine($options_keys, $bridge->getReturns());
 			}catch(AwaitFormException $awaitFormException){
-				try{
-					$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
-				}catch(AwaitFormOptionsChildException $exception){
-					throw new AwaitFormOptionsExpectedCrashException($exception->getMessage(), $exception->getCode(), $exception);
-				}
+				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
 				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
 			}catch(FormValidationException $formValidationException){
+				$bridge->rejectsAll(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_VERIFICATION_FAILED));
 				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 			}catch(AwaitFormOptionsChildException $exception){
 				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
@@ -287,17 +284,15 @@ class AwaitFormOptions{
 					}
 				}
 			}catch(AwaitFormException $awaitFormException){
-				try{
-					$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
-				}catch(AwaitFormOptionsChildException $exception){
-					throw new AwaitFormOptionsExpectedCrashException($exception->getMessage(), $exception->getCode(), $exception);
-				}
+				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
 				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
 			}catch(FormValidationException $formValidationException){
+				$bridge->rejectsAll(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_VERIFICATION_FAILED));
 				throw new AwaitFormOptionsParentException("Invalid data was received:" . $formValidationException->getMessage(), AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 			}catch(AwaitFormOptionsChildException $exception){
 				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
+			$bridge->rejectsAll(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_VERIFICATION_FAILED));
 			// 該当しなかった場合はフォーム不正とみなす
 			throw new AwaitFormOptionsParentException("An invalid button selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 		}finally{
