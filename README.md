@@ -1553,6 +1553,8 @@ Fixed gc leak (memory leak) when form is abandoned　　
 
 * ❌ Dependency-related exception **AwaitFormException** is **no longer** used at the API level.
 
+* ✨ However, the error id of the AwaitFormException is still used.
+
 * ❌ The `neverRejects` and `throwExceptionInCaller` argument have been removed, as they cause severe phpstan warnings.
   Use try-catch instead.
 
