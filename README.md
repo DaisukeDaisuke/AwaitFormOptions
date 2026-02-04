@@ -1070,6 +1070,27 @@ public function getOptions(): array {
 
 ---
 
+### ❌ Mistake 4: Calling request multiple times in a child generator
+
+```php
+// ❌ Calling it multiple times will result in an error, so you must call it again from the parent generator.
+public function flow(): \Generator {
+    $value1 = yield from $this->request(...);
+    $value2 = yield from $this->request(...);
+    $value3 = yield from $this->request(...);
+    $value4 = yield from $this->request(...);
+    // ...
+}
+
+public function getOptions(): array {
+    return [$this->flow()];
+}
+```
+
+✅ **Correct:** Only the parent generator has the right to resubmit the menu.
+
+---
+
 ### ✅ Returning an empty array when no steps are needed  
 
 ```php
