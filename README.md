@@ -1491,54 +1491,6 @@ class ConfirmInputForm extends FormOptions{
 }
 ```
 
-<details>
-
-<summary>Now Discontinued Future</summary>
-
-## AwaitFromOptionsAbortException
-Due to the processing improvements in 1.1.0, all awaitformoption menus now receive AwaitFromOptionsAbortException equally
-
-```php
-<?php
-
-namespace daisukedaisuke\test;
-
-use cosmicpe\awaitform\Button;
-use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
-
-class HpBasedFoodOptions extends MenuOptions{
-    /**
-     * @throws AwaitFormOptionsChildException
-     */
-	public function giveRawFish() : \Generator{
-		yield from $this->request([Button::simple("a"), 0]);
-	}
-
-    /**
-     * @throws AwaitFormOptionsChildException
-     */
-	public function giveRawFish1() : \Generator{
-		yield from $this->request([Button::simple("a"), 0]);
-	}
-
-    /**
-     * @throws AwaitFormOptionsChildException
-     */
-	public function getOptions() : array{
-		return [
-			$this->giveRawFish(),
-			$this->giveRawFish1(),
-		];
-	}
-	
-	public function userDispose() : void{
-	    
-	}
-}
-```
-
-</details>
-
 
 ## 1.3.0 Future
 ### schedule
@@ -1588,16 +1540,6 @@ public function userDispose() : void{
 
 ### Memory leak fixed
 Fixed gc leak (memory leak) when form is abandoned　　
-
-## 2.0.10 Fix
-
-<details>
-
-<summary>Now Discontinued Future</summary>
-
-To address a memory leak in `AwaitGenerator`, `RaceLostException` is no longer used in `AwaitFromOptions`. Instead, if a coroutine is forcibly terminated, an `AwaitFromOptionsAbortException` is now thrown. This change improves consistency
-
-</details>
 
 ## 3.0.0 Future 📌
 
