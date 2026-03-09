@@ -492,7 +492,7 @@ This allows you to treat each form step as a small function that produces a resu
 Here, the selected button id is returned directly from the generator:
 
 > [!NOTE]
-> Please Note that if the form fails, any return values from the child generators will be ignored and null will be returned
+> Please Note that if the form fails, an AwaitFormOptionsParentException is thrown and you never get the return value
 
 
 ```php
@@ -1071,6 +1071,7 @@ public function getOptions(): array {
 ---
 
 ### ❌ Mistake 4: Calling request multiple times in a child generator
+You cannot resubmit the form from the child generator  
 
 ```php
 // ❌ Calling it multiple times will result in an error, so you must call it again from the parent generator.
