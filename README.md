@@ -1002,6 +1002,11 @@ FormControl::toggle(string $label, bool $default = false) // A boolean toggle (c
 ### Menu Available elements
 ```php
 MenuElement::button(string $text) // One user selectable button with text
+MenuElement::buttonWithImagePath(string $text) // Please specify the path within the resource pack
+MenuElement::buttonWithImageUrl(string $text) // This is obtained by the client, but there is a bug.
+MenuElement::divider(string $text) // Adds a horizontal divider to visually separate form sections.
+MenuElement::header(string $text) //  Adds a bold header text to highlight sections.
+MenuElement::label(string $text) //  Static text label, for descriptions or instructions.
 ```
 
 ## ⚠️ Notes on `getOptions()`
@@ -1615,3 +1620,9 @@ Fixed gc leak (memory leak) when form is abandoned　　
   * This behavior originated from an internal implementation bug related to preventing memory leaks. However, it was kept unchanged because it proved useful. This behavior will be preserved in the v3.0.0 series.
 
 * ❌ The `neverRejects` parameter of the standalone functions `sendMenu` and `sendForm` has been removed for the same reasons described above.
+
+# 4.0.0 Future
+- dump AwaitForm 1.0.0
+- The button class has been replaced by \cosmicpe\awaitform\MenuElement
+- The number of elements available in MenuElement has increased
+- phpdoc has been added for some APIs
