@@ -609,8 +609,8 @@ Forms can retrieve the return value of a generator in the same way, note that in
 > However, in `sendMenuAsync()`, only the return value of the **selected generator** is returned.  
 > You will either get:  
 >  
-> - The return value from the selected `MenuOptions` generator, or  
-> - `null` if the form was cancelled or no selection was made.  
+> - The return value from the selected `MenuOptions` generator
+> - If the form fails, an exception will be thrown and no value will be received
 >  
 > Thus:  
 >
@@ -772,6 +772,8 @@ class MobKillerForm extends MenuOptions{
 		yield from $this->request([
 			[MenuElement::button($this->entity->getName() . " (" . $this->entity->getId() . ")"), "a"],
 		]);
+		//In this coroutine, all options are executed and competed against; only the winning option is reached, while the others are interrupted by an `AwaitFormOptionsChildException` (ERR_COROUTINE_ABORTED), and their return values are ignored.
+		//Conversely, by catching `AwaitFormOptionsChildException` (ERR_COROUTINE_ABORTED), it is possible to perform specific handling for the option that was not selected (v3.0.0 and later).
 		$this->entity->kill();
 	}
 
