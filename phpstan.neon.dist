@@ -1,0 +1,9 @@
+parameters:
+  level: 6
+  paths:
+    - %currentWorkingDirectory%/src
+  dynamicConstantNames:
+    - pocketmine\IS_DEVELOPMENT_BUILD
+    - pocketmine\DEBUG
+  bootstrapFiles:
+    - %currentWorkingDirectory%/vendor/autoload.php

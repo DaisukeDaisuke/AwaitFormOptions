@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DaisukeDaisuke\AwaitFormOptions;
 
-use cosmicpe\awaitform\Button;
 use cosmicpe\awaitform\FormControl;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
@@ -15,6 +14,7 @@ use function array_key_last;
 use function count;
 use function debug_backtrace;
 use const DEBUG_BACKTRACE_IGNORE_ARGS;
+use cosmicpe\awaitform\MenuElement;
 
 trait FormBridgeTrait{
 	private RequestResponseBridge $bridge;
@@ -67,13 +67,14 @@ trait FormBridgeTrait{
 	 * Instruct AwaitFormOptions to add an elements
 	 * When this function is awaited, the parent coroutines receives the form response or exception
 	 *
+	 * @param array<FormControl|MenuElement|list<FormControl|MenuElement>|list<array{FormControl|MenuElement, mixed}>> $value
 	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
 	final protected function request(array $value) : \Generator{
 		$missed = false;
 		if(count($value) === 2){
-			if($value[array_key_first($value)] instanceof FormControl || $value[array_key_first($value)] instanceof Button){
-				if(!$value[array_key_last($value)] instanceof FormControl && !$value[array_key_last($value)] instanceof Button){
+			if($value[array_key_first($value)] instanceof FormControl || $value[array_key_first($value)] instanceof MenuElement){
+				if(!$value[array_key_last($value)] instanceof FormControl && !$value[array_key_last($value)] instanceof MenuElement){
 					$missed = true;
 				}
 			}
@@ -83,7 +84,7 @@ trait FormBridgeTrait{
 		}
 
 		try{
-			Utils::validateArrayValueType($value, static function(FormControl|Button|array $value){
+			Utils::validateArrayValueType($value, static function(FormControl|MenuElement|array $value){
 			});
 
 			if($this->requested){

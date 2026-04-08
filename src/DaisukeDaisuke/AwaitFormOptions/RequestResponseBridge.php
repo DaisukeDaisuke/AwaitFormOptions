@@ -13,13 +13,15 @@ use SOFe\AwaitGenerator\Channel;
 use function array_combine;
 use function count;
 use function krsort;
+use cosmicpe\awaitform\FormControl;
+use cosmicpe\awaitform\MenuElement;
 
 class RequestResponseBridge{
 	private int $nextId = 0;
 
 	private int $reservesId = 0;
 
-	/** @var array<int, Channel> 各リクエストごとの入力チャネル */
+	/** @var array<int, Channel<list<array{FormControl|MenuElement, mixed}>|array<int, Channel<list<FormControl|MenuElement>>>>> 各リクエストごとの入力チャネル */
 	private array $pendingRequest = [];
 
 	/** @var array<int, \Closure> 各リクエストに対する応答チャネル */
@@ -27,17 +29,17 @@ class RequestResponseBridge{
 	/** @var array<\Closure> */
 	private array $rejects = [];
 
-	/** @var array<int, array> */
+	/** @var array<int, array<int, mixed>|array<mixed>|array<int, array<mixed>|array<int, array<array<mixed>>>>> */
 	private array $returns = [];
-	/** @var array<int, list<Channel>> */
+	/** @var array<int, list<Channel<null>>> */
 	private array $finalizeList = [];
-	/** @var list<Channel> */
+	/** @var list<Channel<int>> */
 	private array $reserves = [];
 
 	/**
 	 * クライアントから値を送り、応答を待つ
 	 *
-	 * @param mixed $value    要求する値
+	 * @param list<array{FormControl|MenuElement, mixed}>|list<FormControl|MenuElement> $value    要求する値
 	 * @param ?int  $reserved 予約id
 	 * @return \Generator<mixed> 応答値
 	 *
@@ -225,7 +227,7 @@ class RequestResponseBridge{
 	 * @param int                      $id    Unique identifier for storing the results.
 	 * @param int|string               $owenr Identifier for the owner of the result.
 	 * @param array<\Generator<mixed>> $array An array of tasks (generators) to be processed asynchronously.
-	 * @param array|null               $keys  Optional array of keys for mapping the results.
+	 * @param list<int|string>|null               $keys  Optional array of keys for mapping the results.
 	 */
 	public function all(int $id, int|string $owenr, array $array, ?array $keys = []) : void{
 		Await::f2c(function() use ($owenr, $id, $array, $keys){
@@ -282,6 +284,9 @@ class RequestResponseBridge{
 		return count($this->pendingRequest);
 	}
 
+	/**
+	 * @return array<int, array<mixed>|array<int, array<mixed>|array<int, array<array<mixed>>>>>
+	 */
 	public function getReturns() : array{
 		return $this->returns;
 	}

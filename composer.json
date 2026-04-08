@@ -3,8 +3,11 @@
     "type": "library",
     "require": {
         "php": ">=8.2",
-        "cosmicpe/awaitform": "^0.0.3",
+        "cosmicpe/awaitform": "^1.0.0",
         "sof3/await-generator": "^3.6"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "*"
     },
     "autoload": {
         "classmap": ["src"]

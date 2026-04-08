@@ -41,8 +41,9 @@ AwaitFormOptions is designed to simplify complex form workflows and improve deve
 >   
 > Support Status  
 > 1.x series: End of life, There is a significant memory leak  
-> 2.x series: Archived and issues are supported  
-> 3.x series: In development  
+> 2.x series: End of life,
+> 3.x series: Archived and issues are supported  
+> 4.x series: In development  
 
 
 ## Why?
@@ -302,7 +303,7 @@ namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\player\Player;
-use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\MenuElement;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class NameMenuOptions extends MenuOptions{
@@ -313,7 +314,7 @@ class NameMenuOptions extends MenuOptions{
 		try{
 			$test = [];
 			foreach($this->options as $item){
-				$test[$item] = Button::simple($item);
+				$test[$item] = MenuElement::button($item);
 			}
 			$test = yield from $this->request($test);
 			$this->player->sendMessage($test.", ".__FUNCTION__);
@@ -325,7 +326,7 @@ class NameMenuOptions extends MenuOptions{
 	public function optionsB() : \Generator{
 		try{
 			$test = yield from $this->request([
-				[Button::simple("a"), "a"], //Even if you use duplicate keys, Awaitformoption will resolve it
+				[MenuElement::button("a"), "a"], //Even if you use duplicate keys, Awaitformoption will resolve it
 			]);
 			$this->player->sendMessage($test.", ".__FUNCTION__);
 		}catch(AwaitFormOptionsChildException $exception){
@@ -380,16 +381,16 @@ public function a(PlayerItemUseEvent $event): void {
 ---
 
 ### 🧩 Menu Advanced Usage: Attaching Objects to Buttons
-Normally, Button::simple("label") returns a Button that maps to a string value.
+Normally, MenuElement::button("label") returns a Button that maps to a string value.
 But what if you want to associate a more complex object, like a Player, Entity, or CustomData // with each button?
 
-You can do this easily by passing `[Button::simple(...), $value]` into the menu array.
+You can do this easily by passing `[MenuElement::button(...), $value]` into the menu array.
 
 ```php
 $selected  = yield from $this->request([
-    [Button::simple("Label A"), $someObject],
-    [Button::simple("Label B"), "custom-id"],
-    [Button::simple("Label C"), 123],
+    [MenuElement::button("Label A"), $someObject],
+    [MenuElement::button("Label B"), "custom-id"],
+    [MenuElement::button("Label C"), 123],
 ]);
 ```
 #### In this format:
@@ -444,7 +445,7 @@ namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\player\Player;
-use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\MenuElement;
 use pocketmine\entity\Entity;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
@@ -458,7 +459,7 @@ class EntityNameMenuOptions extends MenuOptions{
 
 			foreach($this->entities as $entity){
 				// Display name, attach Entity instance
-				$buttons[] = [Button::simple($entity->getName()), $entity];
+				$buttons[] = [MenuElement::button($entity->getName()), $entity];
 			}
 
 			/** @var Entity $selected */
@@ -530,7 +531,7 @@ declare(strict_types=1);
 namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
-use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\MenuElement;
 use cosmicpe\awaitform\AwaitFormException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
@@ -541,7 +542,7 @@ class SimpleButton extends MenuOptions{
 	public function choose(int $offset) : \Generator{
 		try{
 			yield from $this->request(
-				[Button::simple($this->name), 0]
+				[MenuElement::button($this->name), 0]
 			);
 			return $this->id + $offset;
 		}catch(AwaitFormOptionsChildException){
@@ -756,7 +757,7 @@ namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use pocketmine\entity\Entity;
-use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\MenuElement;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class MobKillerForm extends MenuOptions{
@@ -769,7 +770,7 @@ class MobKillerForm extends MenuOptions{
 	 */
 	public function KillerForm() : \Generator{
 		yield from $this->request([
-			[Button::simple($this->entity->getName() . " (" . $this->entity->getId() . ")"), "a"],
+			[MenuElement::button($this->entity->getName() . " (" . $this->entity->getId() . ")"), "a"],
 		]);
 		$this->entity->kill();
 	}
@@ -891,7 +892,7 @@ namespace test\test;
 
 use pocketmine\player\Player;
 use pocketmine\item\VanillaItems;
-use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\MenuElement;
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
@@ -905,7 +906,7 @@ class HpBasedFoodOptions extends MenuOptions{
 	 */
 	public function giveRawFish() : \Generator{
 		yield from $this->request([
-			Button::simple("§2You are full of strength! Enjoy this raw fish.§r"),
+			MenuElement::button("§2You are full of strength! Enjoy this raw fish.§r"),
 		]);
 		$this->player->getInventory()->addItem(VanillaItems::RAW_FISH()->setCount(1));
 		$this->player->sendToastNotification("Food Given", "Raw Fish");
@@ -916,7 +917,7 @@ class HpBasedFoodOptions extends MenuOptions{
 	 */
 	public function giveCookedFish() : \Generator{
 		yield from $this->request([
-			Button::simple("§6You're moderately hurt. Take this cooked fish.§r"),
+			MenuElement::button("§6You're moderately hurt. Take this cooked fish.§r"),
 		]);
 		$this->player->getInventory()->addItem(VanillaItems::COOKED_FISH()->setCount(1));
 		$this->player->sendToastNotification("Food Given", "Cooked Fish");
@@ -927,7 +928,7 @@ class HpBasedFoodOptions extends MenuOptions{
 	 */
 	public function giveSteak() : \Generator{
 		yield from $this->request([
-			Button::simple("§4You're starving! Here's a juicy steak.§r"),
+			MenuElement::button("§4You're starving! Here's a juicy steak.§r"),
 		]);
 		$this->player->getInventory()->addItem(VanillaItems::STEAK()->setCount(1));
 		$this->player->sendToastNotification("Food Given", "Steak");
@@ -1000,7 +1001,7 @@ FormControl::toggle(string $label, bool $default = false) // A boolean toggle (c
 
 ### Menu Available elements
 ```php
-Button::simple(string $text) // One user selectable button with text
+MenuElement::button(string $text) // One user selectable button with text
 ```
 
 ## ⚠️ Notes on `getOptions()`
@@ -1502,7 +1503,7 @@ Want to use some await before sending a request? Now you can with schedule() in 
 
 namespace daisukedaisuke\test;
 
-use cosmicpe\awaitform\Button;
+use cosmicpe\awaitform\MenuElement;
 use DaisukeDaisuke\AwaitFormOptions\MenuOptions;
 
 class HpBasedFoodOptions extends MenuOptions{
@@ -1512,7 +1513,7 @@ class HpBasedFoodOptions extends MenuOptions{
 	public function giveRawFish1() : \Generator{
 	    $this->schedule(); // This ensures that the awaitformoptions coroutine is temporarily suspended
 	    //A few awaits
-	    yield from $this->request([Button::simple("a"), 0]); // Here, the suspension is lifted
+	    yield from $this->request([MenuElement::button("a"), 0]); // Here, the suspension is lifted
 	}
 
     /**

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fc67f0d37869dee1f1a5d012b699b35f",
+    "content-hash": "d4635627755573f4186bc8e1bcd65624",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -67,25 +67,25 @@
         },
         {
             "name": "brick/math",
-            "version": "0.13.1",
+            "version": "0.14.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brick/math.git",
-                "reference": "fc7ed316430118cc7836bf45faff18d5dfc8de04"
+                "reference": "63422359a44b7f06cae63c3b429b59e8efcc0629"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brick/math/zipball/fc7ed316430118cc7836bf45faff18d5dfc8de04",
-                "reference": "fc7ed316430118cc7836bf45faff18d5dfc8de04",
+                "url": "https://api.github.com/repos/brick/math/zipball/63422359a44b7f06cae63c3b429b59e8efcc0629",
+                "reference": "63422359a44b7f06cae63c3b429b59e8efcc0629",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.1"
+                "php": "^8.2"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.2",
-                "phpunit/phpunit": "^10.1",
-                "vimeo/psalm": "6.8.8"
+                "phpstan/phpstan": "2.1.22",
+                "phpunit/phpunit": "^11.5"
             },
             "type": "library",
             "autoload": {
@@ -115,7 +115,7 @@
             ],
             "support": {
                 "issues": "https://github.com/brick/math/issues",
-                "source": "https://github.com/brick/math/tree/0.13.1"
+                "source": "https://github.com/brick/math/tree/0.14.8"
             },
             "funding": [
                 {
@@ -123,20 +123,20 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-29T13:50:30+00:00"
+            "time": "2026-02-10T14:33:43+00:00"
         },
         {
             "name": "cosmicpe/awaitform",
-            "version": "v0.0.3",
+            "version": "v1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Cosmoverse/AwaitForm.git",
-                "reference": "8a08068df5d817a06e38ecfb0ab72bd4ab5f3bf5"
+                "reference": "299637c2e5633c8208bc1a8492a2b34900a67e36"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Cosmoverse/AwaitForm/zipball/8a08068df5d817a06e38ecfb0ab72bd4ab5f3bf5",
-                "reference": "8a08068df5d817a06e38ecfb0ab72bd4ab5f3bf5",
+                "url": "https://api.github.com/repos/Cosmoverse/AwaitForm/zipball/299637c2e5633c8208bc1a8492a2b34900a67e36",
+                "reference": "299637c2e5633c8208bc1a8492a2b34900a67e36",
                 "shasum": ""
             },
             "require": {
@@ -169,22 +169,22 @@
             "description": "Write clean form navigation flows in PocketMine-MP using async/await pattern",
             "support": {
                 "issues": "https://github.com/Cosmoverse/AwaitForm/issues",
-                "source": "https://github.com/Cosmoverse/AwaitForm/tree/v0.0.3"
+                "source": "https://github.com/Cosmoverse/AwaitForm/tree/v1.0.0"
             },
-            "time": "2025-07-24T05:37:33+00:00"
+            "time": "2026-04-07T12:47:42+00:00"
         },
         {
             "name": "netresearch/jsonmapper",
-            "version": "v5.0.0",
+            "version": "v5.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/cweiske/jsonmapper.git",
-                "reference": "8c64d8d444a5d764c641ebe97e0e3bc72b25bf6c"
+                "reference": "980674efdda65913492d29a8fd51c82270dd37bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cweiske/jsonmapper/zipball/8c64d8d444a5d764c641ebe97e0e3bc72b25bf6c",
-                "reference": "8c64d8d444a5d764c641ebe97e0e3bc72b25bf6c",
+                "url": "https://api.github.com/repos/cweiske/jsonmapper/zipball/980674efdda65913492d29a8fd51c82270dd37bb",
+                "reference": "980674efdda65913492d29a8fd51c82270dd37bb",
                 "shasum": ""
             },
             "require": {
@@ -220,22 +220,22 @@
             "support": {
                 "email": "cweiske@cweiske.de",
                 "issues": "https://github.com/cweiske/jsonmapper/issues",
-                "source": "https://github.com/cweiske/jsonmapper/tree/v5.0.0"
+                "source": "https://github.com/cweiske/jsonmapper/tree/v5.0.1"
             },
-            "time": "2024-09-08T10:20:00+00:00"
+            "time": "2026-02-22T16:28:03+00:00"
         },
         {
             "name": "pocketmine/bedrock-block-upgrade-schema",
-            "version": "5.1.0",
+            "version": "5.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/BedrockBlockUpgradeSchema.git",
-                "reference": "2218512e4b91f5bfd09ef55f7a4c4b04e169e41a"
+                "reference": "5d7889c9a1cdf9e3cd814d2a104ad69b75116ec7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/BedrockBlockUpgradeSchema/zipball/2218512e4b91f5bfd09ef55f7a4c4b04e169e41a",
-                "reference": "2218512e4b91f5bfd09ef55f7a4c4b04e169e41a",
+                "url": "https://api.github.com/repos/pmmp/BedrockBlockUpgradeSchema/zipball/5d7889c9a1cdf9e3cd814d2a104ad69b75116ec7",
+                "reference": "5d7889c9a1cdf9e3cd814d2a104ad69b75116ec7",
                 "shasum": ""
             },
             "type": "library",
@@ -246,22 +246,22 @@
             "description": "Schemas describing how to upgrade saved block data in older Minecraft: Bedrock Edition world saves",
             "support": {
                 "issues": "https://github.com/pmmp/BedrockBlockUpgradeSchema/issues",
-                "source": "https://github.com/pmmp/BedrockBlockUpgradeSchema/tree/5.1.0"
+                "source": "https://github.com/pmmp/BedrockBlockUpgradeSchema/tree/5.2.0"
             },
-            "time": "2025-02-11T17:41:44+00:00"
+            "time": "2025-10-02T13:22:10+00:00"
         },
         {
             "name": "pocketmine/bedrock-data",
-            "version": "5.2.0+bedrock-1.21.93",
+            "version": "6.5.0+bedrock-1.26.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/BedrockData.git",
-                "reference": "740e18e490c6a102b774518ff2224a06762bcaf8"
+                "reference": "efb7cd308d5d578ca2c6e77e3c43541fa49b7cc3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/BedrockData/zipball/740e18e490c6a102b774518ff2224a06762bcaf8",
-                "reference": "740e18e490c6a102b774518ff2224a06762bcaf8",
+                "url": "https://api.github.com/repos/pmmp/BedrockData/zipball/efb7cd308d5d578ca2c6e77e3c43541fa49b7cc3",
+                "reference": "efb7cd308d5d578ca2c6e77e3c43541fa49b7cc3",
                 "shasum": ""
             },
             "type": "library",
@@ -272,22 +272,22 @@
             "description": "Blobs of data generated from Minecraft: Bedrock Edition, used by PocketMine-MP",
             "support": {
                 "issues": "https://github.com/pmmp/BedrockData/issues",
-                "source": "https://github.com/pmmp/BedrockData/tree/bedrock-1.21.93"
+                "source": "https://github.com/pmmp/BedrockData/tree/bedrock-1.26.10"
             },
-            "time": "2025-07-08T12:30:28+00:00"
+            "time": "2026-03-25T16:49:49+00:00"
         },
         {
             "name": "pocketmine/bedrock-item-upgrade-schema",
-            "version": "1.14.0",
+            "version": "1.16.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/BedrockItemUpgradeSchema.git",
-                "reference": "9fc7c9bbb558a017395c1cb7dd819c033ee971bb"
+                "reference": "8c48ceaa72d390e89c4dbff9542aa4dfa734057d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/BedrockItemUpgradeSchema/zipball/9fc7c9bbb558a017395c1cb7dd819c033ee971bb",
-                "reference": "9fc7c9bbb558a017395c1cb7dd819c033ee971bb",
+                "url": "https://api.github.com/repos/pmmp/BedrockItemUpgradeSchema/zipball/8c48ceaa72d390e89c4dbff9542aa4dfa734057d",
+                "reference": "8c48ceaa72d390e89c4dbff9542aa4dfa734057d",
                 "shasum": ""
             },
             "type": "library",
@@ -298,25 +298,26 @@
             "description": "JSON schemas for upgrading items found in older Minecraft: Bedrock world saves",
             "support": {
                 "issues": "https://github.com/pmmp/BedrockItemUpgradeSchema/issues",
-                "source": "https://github.com/pmmp/BedrockItemUpgradeSchema/tree/1.14.0"
+                "source": "https://github.com/pmmp/BedrockItemUpgradeSchema/tree/1.16.0"
             },
-            "time": "2024-12-04T12:22:49+00:00"
+            "time": "2025-10-02T13:22:32+00:00"
         },
         {
             "name": "pocketmine/bedrock-protocol",
-            "version": "39.1.0+bedrock-1.21.93",
+            "version": "56.1.0+bedrock-1.26.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/BedrockProtocol.git",
-                "reference": "e9bc5fb691d18dab229a158462c13f0c6fea79c8"
+                "reference": "d73a7ddf5bf0a6fda88afed282d7875da757cf26"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/BedrockProtocol/zipball/e9bc5fb691d18dab229a158462c13f0c6fea79c8",
-                "reference": "e9bc5fb691d18dab229a158462c13f0c6fea79c8",
+                "url": "https://api.github.com/repos/pmmp/BedrockProtocol/zipball/d73a7ddf5bf0a6fda88afed282d7875da757cf26",
+                "reference": "d73a7ddf5bf0a6fda88afed282d7875da757cf26",
                 "shasum": ""
             },
             "require": {
+                "ext-encoding": "~1.0.0",
                 "ext-json": "*",
                 "php": "^8.1",
                 "pocketmine/binaryutils": "^0.2.0",
@@ -344,22 +345,22 @@
             "description": "An implementation of the Minecraft: Bedrock Edition protocol in PHP",
             "support": {
                 "issues": "https://github.com/pmmp/BedrockProtocol/issues",
-                "source": "https://github.com/pmmp/BedrockProtocol/tree/39.1.0+bedrock-1.21.93"
+                "source": "https://github.com/pmmp/BedrockProtocol/tree/56.1.0+bedrock-1.26.10"
             },
-            "time": "2025-07-08T12:31:39+00:00"
+            "time": "2026-04-05T00:22:06+00:00"
         },
         {
             "name": "pocketmine/binaryutils",
-            "version": "0.2.6",
+            "version": "0.2.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/BinaryUtils.git",
-                "reference": "ccfc1899b859d45814ea3592e20ebec4cb731c84"
+                "reference": "14c044afa33cb581b4a6d1ea04a87e0bc99e824b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/BinaryUtils/zipball/ccfc1899b859d45814ea3592e20ebec4cb731c84",
-                "reference": "ccfc1899b859d45814ea3592e20ebec4cb731c84",
+                "url": "https://api.github.com/repos/pmmp/BinaryUtils/zipball/14c044afa33cb581b4a6d1ea04a87e0bc99e824b",
+                "reference": "14c044afa33cb581b4a6d1ea04a87e0bc99e824b",
                 "shasum": ""
             },
             "require": {
@@ -368,9 +369,9 @@
             },
             "require-dev": {
                 "phpstan/extension-installer": "^1.0",
-                "phpstan/phpstan": "~1.10.3",
-                "phpstan/phpstan-phpunit": "^1.0",
-                "phpstan/phpstan-strict-rules": "^1.0.0",
+                "phpstan/phpstan": "2.1.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0.0",
                 "phpunit/phpunit": "^9.5 || ^10.0 || ^11.0"
             },
             "type": "library",
@@ -386,36 +387,36 @@
             "description": "Classes and methods for conveniently handling binary data",
             "support": {
                 "issues": "https://github.com/pmmp/BinaryUtils/issues",
-                "source": "https://github.com/pmmp/BinaryUtils/tree/0.2.6"
+                "source": "https://github.com/pmmp/BinaryUtils/tree/0.2.7"
             },
-            "time": "2024-03-04T15:04:17+00:00"
+            "time": "2025-12-24T04:20:35+00:00"
         },
         {
             "name": "pocketmine/callback-validator",
-            "version": "1.0.3",
+            "version": "1.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/CallbackValidator.git",
-                "reference": "64787469766bcaa7e5885242e85c23c25e8c55a2"
+                "reference": "143fa6e13254f1ab90c31b223982016f95635c37"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/CallbackValidator/zipball/64787469766bcaa7e5885242e85c23c25e8c55a2",
-                "reference": "64787469766bcaa7e5885242e85c23c25e8c55a2",
+                "url": "https://api.github.com/repos/pmmp/CallbackValidator/zipball/143fa6e13254f1ab90c31b223982016f95635c37",
+                "reference": "143fa6e13254f1ab90c31b223982016f95635c37",
                 "shasum": ""
             },
             "require": {
                 "ext-reflection": "*",
-                "php": "^7.1 || ^8.0"
+                "php": "^8.0"
             },
             "replace": {
                 "daverandom/callback-validator": "*"
             },
             "require-dev": {
                 "phpstan/extension-installer": "^1.0",
-                "phpstan/phpstan": "0.12.59",
-                "phpstan/phpstan-strict-rules": "^0.12.4",
-                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.0"
+                "phpstan/phpstan": "2.1.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^9.0 || ^10.0 || ^11.0"
             },
             "type": "library",
             "autoload": {
@@ -436,9 +437,9 @@
             "description": "Fork of daverandom/callback-validator - Tools for validating callback signatures",
             "support": {
                 "issues": "https://github.com/pmmp/CallbackValidator/issues",
-                "source": "https://github.com/pmmp/CallbackValidator/tree/1.0.3"
+                "source": "https://github.com/pmmp/CallbackValidator/tree/1.0.4"
             },
-            "time": "2020-12-11T01:45:37+00:00"
+            "time": "2025-12-24T01:25:05+00:00"
         },
         {
             "name": "pocketmine/color",
@@ -480,24 +481,24 @@
         },
         {
             "name": "pocketmine/errorhandler",
-            "version": "0.7.0",
+            "version": "0.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/ErrorHandler.git",
-                "reference": "cae94884368a74ece5294b9ff7fef18732dcd921"
+                "reference": "84c9ec829163f21ced425d8f3b27d32f908e87fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/ErrorHandler/zipball/cae94884368a74ece5294b9ff7fef18732dcd921",
-                "reference": "cae94884368a74ece5294b9ff7fef18732dcd921",
+                "url": "https://api.github.com/repos/pmmp/ErrorHandler/zipball/84c9ec829163f21ced425d8f3b27d32f908e87fb",
+                "reference": "84c9ec829163f21ced425d8f3b27d32f908e87fb",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.0"
             },
             "require-dev": {
-                "phpstan/phpstan": "~1.10.3",
-                "phpstan/phpstan-strict-rules": "^1.0",
+                "phpstan/phpstan": "2.1.33",
+                "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^9.5 || ^10.0 || ^11.0"
             },
             "type": "library",
@@ -513,32 +514,9 @@
             "description": "Utilities to handle nasty PHP E_* errors in a usable way",
             "support": {
                 "issues": "https://github.com/pmmp/ErrorHandler/issues",
-                "source": "https://github.com/pmmp/ErrorHandler/tree/0.7.0"
+                "source": "https://github.com/pmmp/ErrorHandler/tree/0.7.1"
             },
-            "time": "2024-04-02T18:29:54+00:00"
-        },
-        {
-            "name": "pocketmine/locale-data",
-            "version": "2.25.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/pmmp/Language.git",
-                "reference": "8e6514f5a9638e69cdc2219c775fc7d3bb4c9fdd"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/Language/zipball/8e6514f5a9638e69cdc2219c775fc7d3bb4c9fdd",
-                "reference": "8e6514f5a9638e69cdc2219c775fc7d3bb4c9fdd",
-                "shasum": ""
-            },
-            "type": "library",
-            "notification-url": "https://packagist.org/downloads/",
-            "description": "Language resources used by PocketMine-MP",
-            "support": {
-                "issues": "https://github.com/pmmp/Language/issues",
-                "source": "https://github.com/pmmp/Language/tree/2.25.1"
-            },
-            "time": "2025-04-16T11:15:32+00:00"
+            "time": "2025-12-24T02:26:52+00:00"
         },
         {
             "name": "pocketmine/log",
@@ -624,16 +602,16 @@
         },
         {
             "name": "pocketmine/nbt",
-            "version": "1.1.1",
+            "version": "1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/NBT.git",
-                "reference": "c3c7b0a7295daeaf7873d90fed5c5d10381d12e1"
+                "reference": "51b8d6a97065fb93e0b4f660b65164b6e1ed2fff"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/NBT/zipball/c3c7b0a7295daeaf7873d90fed5c5d10381d12e1",
-                "reference": "c3c7b0a7295daeaf7873d90fed5c5d10381d12e1",
+                "url": "https://api.github.com/repos/pmmp/NBT/zipball/51b8d6a97065fb93e0b4f660b65164b6e1ed2fff",
+                "reference": "51b8d6a97065fb93e0b4f660b65164b6e1ed2fff",
                 "shasum": ""
             },
             "require": {
@@ -643,7 +621,8 @@
             },
             "require-dev": {
                 "phpstan/extension-installer": "^1.0",
-                "phpstan/phpstan": "2.1.0",
+                "phpstan/phpstan": "2.1.27",
+                "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^9.5"
             },
@@ -660,22 +639,22 @@
             "description": "PHP library for working with Named Binary Tags",
             "support": {
                 "issues": "https://github.com/pmmp/NBT/issues",
-                "source": "https://github.com/pmmp/NBT/tree/1.1.1"
+                "source": "https://github.com/pmmp/NBT/tree/1.2.0"
             },
-            "time": "2025-03-09T01:46:03+00:00"
+            "time": "2025-09-19T18:09:30+00:00"
         },
         {
             "name": "pocketmine/pocketmine-mp",
-            "version": "5.31.0",
+            "version": "5.42.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/PocketMine-MP.git",
-                "reference": "50e15db9ac280f4646f33fc05283190092c53e28"
+                "reference": "319f3c624b21468923cecf9934077d85c4771ffe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/50e15db9ac280f4646f33fc05283190092c53e28",
-                "reference": "50e15db9ac280f4646f33fc05283190092c53e28",
+                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/319f3c624b21468923cecf9934077d85c4771ffe",
+                "reference": "319f3c624b21468923cecf9934077d85c4771ffe",
                 "shasum": ""
             },
             "require": {
@@ -686,6 +665,7 @@
                 "ext-ctype": "*",
                 "ext-curl": "*",
                 "ext-date": "*",
+                "ext-encoding": "~1.0.0",
                 "ext-gmp": "*",
                 "ext-hash": "*",
                 "ext-igbinary": "^3.0.1",
@@ -707,22 +687,21 @@
                 "netresearch/jsonmapper": "~v5.0.0",
                 "php": "^8.1",
                 "php-64bit": "*",
-                "pocketmine/bedrock-block-upgrade-schema": "~5.1.0+bedrock-1.21.60",
-                "pocketmine/bedrock-data": "~5.2.0+bedrock-1.21.93",
-                "pocketmine/bedrock-item-upgrade-schema": "~1.14.0+bedrock-1.21.50",
-                "pocketmine/bedrock-protocol": "~39.1.0+bedrock-1.21.93",
+                "pocketmine/bedrock-block-upgrade-schema": "~5.2.0+bedrock-1.21.110",
+                "pocketmine/bedrock-data": "~6.5.0+bedrock-1.26.10",
+                "pocketmine/bedrock-item-upgrade-schema": "~1.16.0+bedrock-1.21.110",
+                "pocketmine/bedrock-protocol": "~56.1.0+bedrock-1.26.10",
                 "pocketmine/binaryutils": "^0.2.1",
-                "pocketmine/callback-validator": "^1.0.2",
+                "pocketmine/callback-validator": "~1.0.4",
                 "pocketmine/color": "^0.3.0",
                 "pocketmine/errorhandler": "^0.7.0",
-                "pocketmine/locale-data": "~2.25.0",
                 "pocketmine/log": "^0.4.0",
                 "pocketmine/math": "~1.0.0",
-                "pocketmine/nbt": "~1.1.0",
+                "pocketmine/nbt": "~1.2.0",
                 "pocketmine/raklib": "~1.2.0",
                 "pocketmine/raklib-ipc": "~1.0.0",
                 "pocketmine/snooze": "^0.5.0",
-                "ramsey/uuid": "~4.8.0",
+                "ramsey/uuid": "~4.9.0",
                 "symfony/filesystem": "~6.4.0"
             },
             "replace": {
@@ -730,7 +709,7 @@
                 "symfony/polyfill-mbstring": "*"
             },
             "require-dev": {
-                "phpstan/phpstan": "2.1.17",
+                "phpstan/phpstan": "2.1.46",
                 "phpstan/phpstan-phpunit": "^2.0.0",
                 "phpstan/phpstan-strict-rules": "^2.0.0",
                 "phpunit/phpunit": "^10.5.24"
@@ -741,7 +720,10 @@
                     "src/CoreConstants.php"
                 ],
                 "psr-4": {
-                    "pocketmine\\": "src/"
+                    "pocketmine\\": [
+                        "src/",
+                        "generated/"
+                    ]
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -752,7 +734,7 @@
             "homepage": "https://pmmp.io",
             "support": {
                 "issues": "https://github.com/pmmp/PocketMine-MP/issues",
-                "source": "https://github.com/pmmp/PocketMine-MP/tree/5.31.0"
+                "source": "https://github.com/pmmp/PocketMine-MP/tree/5.42.1"
             },
             "funding": [
                 {
@@ -764,20 +746,20 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2025-07-08T12:41:59+00:00"
+            "time": "2026-04-05T00:37:00+00:00"
         },
         {
             "name": "pocketmine/raklib",
-            "version": "1.2.0",
+            "version": "1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/RakLib.git",
-                "reference": "a28d05216d34dbd00e8aed827a58df6b4c11510b"
+                "reference": "669eb4d1e644f91437323ef24ce3ee985182b829"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/RakLib/zipball/a28d05216d34dbd00e8aed827a58df6b4c11510b",
-                "reference": "a28d05216d34dbd00e8aed827a58df6b4c11510b",
+                "url": "https://api.github.com/repos/pmmp/RakLib/zipball/669eb4d1e644f91437323ef24ce3ee985182b829",
+                "reference": "669eb4d1e644f91437323ef24ce3ee985182b829",
                 "shasum": ""
             },
             "require": {
@@ -789,7 +771,7 @@
                 "pocketmine/log": "^0.3.0 || ^0.4.0"
             },
             "require-dev": {
-                "phpstan/phpstan": "2.1.0",
+                "phpstan/phpstan": "2.1.33",
                 "phpstan/phpstan-strict-rules": "^2.0"
             },
             "type": "library",
@@ -805,9 +787,9 @@
             "description": "A RakNet server implementation written in PHP",
             "support": {
                 "issues": "https://github.com/pmmp/RakLib/issues",
-                "source": "https://github.com/pmmp/RakLib/tree/1.2.0"
+                "source": "https://github.com/pmmp/RakLib/tree/1.2.1"
             },
-            "time": "2025-06-08T17:36:06+00:00"
+            "time": "2025-12-24T03:02:42+00:00"
         },
         {
             "name": "pocketmine/raklib-ipc",
@@ -968,21 +950,20 @@
         },
         {
             "name": "ramsey/uuid",
-            "version": "4.8.1",
+            "version": "4.9.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ramsey/uuid.git",
-                "reference": "fdf4dd4e2ff1813111bd0ad58d7a1ddbb5b56c28"
+                "reference": "8429c78ca35a09f27565311b98101e2826affde0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ramsey/uuid/zipball/fdf4dd4e2ff1813111bd0ad58d7a1ddbb5b56c28",
-                "reference": "fdf4dd4e2ff1813111bd0ad58d7a1ddbb5b56c28",
+                "url": "https://api.github.com/repos/ramsey/uuid/zipball/8429c78ca35a09f27565311b98101e2826affde0",
+                "reference": "8429c78ca35a09f27565311b98101e2826affde0",
                 "shasum": ""
             },
             "require": {
-                "brick/math": "^0.8.8 || ^0.9 || ^0.10 || ^0.11 || ^0.12 || ^0.13",
-                "ext-json": "*",
+                "brick/math": "^0.8.16 || ^0.9 || ^0.10 || ^0.11 || ^0.12 || ^0.13 || ^0.14",
                 "php": "^8.0",
                 "ramsey/collection": "^1.2 || ^2.0"
             },
@@ -1041,9 +1022,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ramsey/uuid/issues",
-                "source": "https://github.com/ramsey/uuid/tree/4.8.1"
+                "source": "https://github.com/ramsey/uuid/tree/4.9.2"
             },
-            "time": "2025-06-01T06:28:46+00:00"
+            "time": "2025-12-14T04:43:48+00:00"
         },
         {
             "name": "sof3/await-generator",
@@ -1100,16 +1081,16 @@
         },
         {
             "name": "symfony/filesystem",
-            "version": "v6.4.13",
+            "version": "v6.4.34",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
-                "reference": "4856c9cf585d5a0313d8d35afd681a526f038dd3"
+                "reference": "01ffe0411b842f93c571e5c391f289c3fdd498c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/4856c9cf585d5a0313d8d35afd681a526f038dd3",
-                "reference": "4856c9cf585d5a0313d8d35afd681a526f038dd3",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/01ffe0411b842f93c571e5c391f289c3fdd498c3",
+                "reference": "01ffe0411b842f93c571e5c391f289c3fdd498c3",
                 "shasum": ""
             },
             "require": {
@@ -1146,7 +1127,7 @@
             "description": "Provides basic utilities for the filesystem",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/filesystem/tree/v6.4.13"
+                "source": "https://github.com/symfony/filesystem/tree/v6.4.34"
             },
             "funding": [
                 {
@@ -1158,14 +1139,72 @@
                     "type": "github"
                 },
                 {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
                     "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-10-25T15:07:50+00:00"
+            "time": "2026-02-24T17:51:06+00:00"
         }
     ],
-    "packages-dev": [],
+    "packages-dev": [
+        {
+            "name": "phpstan/phpstan",
+            "version": "2.1.46",
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/a193923fc2d6325ef4e741cf3af8c3e8f54dbf25",
+                "reference": "a193923fc2d6325ef4e741cf3af8c3e8f54dbf25",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4|^8.0"
+            },
+            "conflict": {
+                "phpstan/phpstan-shim": "*"
+            },
+            "bin": [
+                "phpstan",
+                "phpstan.phar"
+            ],
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHPStan - PHP Static Analysis Tool",
+            "keywords": [
+                "dev",
+                "static analysis"
+            ],
+            "support": {
+                "docs": "https://phpstan.org/user-guide/getting-started",
+                "forum": "https://github.com/phpstan/phpstan/discussions",
+                "issues": "https://github.com/phpstan/phpstan/issues",
+                "security": "https://github.com/phpstan/phpstan/security/policy",
+                "source": "https://github.com/phpstan/phpstan-src"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/ondrejmirtes",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/phpstan",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-04-01T09:25:14+00:00"
+        }
+    ],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {},
@@ -1175,5 +1214,5 @@
         "php": ">=8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

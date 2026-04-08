@@ -6,7 +6,6 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 
 use cosmicpe\awaitform\AwaitForm;
 use cosmicpe\awaitform\AwaitFormException;
-use cosmicpe\awaitform\Button;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
@@ -24,6 +23,7 @@ use function count;
 use function is_array;
 use function is_object;
 use function is_scalar;
+use cosmicpe\awaitform\MenuElement;
 
 class AwaitFormOptions{
 	final private function __construct(){
@@ -103,9 +103,9 @@ class AwaitFormOptions{
 								$bridge->reject(
 									$id,
 									new AwaitFormOptionsExpectedCrashException(
-										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
+										"The request value must be a 2-element list array [MenuElement, key], but an array with " . count($item) . " element(s) was given. \n" .
 										" (key: " . $key . "). " .
-										"Ensure that your form returns an array like [Button, SelectedKey]. " .
+										"Ensure that your form returns an array like [MenuElement, SelectedKey]. " .
 										"See also: AwaitFormOptions::sendFormAsync()"
 									)
 								);
@@ -116,6 +116,7 @@ class AwaitFormOptions{
 						[$item, $key] = $item;
 					}
 					// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
+					/** @phpstan-ignore function.impossibleType */
 					if(!is_scalar($key) || is_object($key)){
 						//HACK: Making backtraces useful
 						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
@@ -255,9 +256,9 @@ class AwaitFormOptions{
 						}
 						[$item, $key] = $item;
 					}
-					if(!$item instanceof Button){
+					if(!$item instanceof MenuElement){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("Button is required, see also AwaitFormOptions::sendMenuAsync()"));
+						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("MenuElement is required, see also AwaitFormOptions::sendMenuAsync()"));
 					}
 					$flatButtons[$counter++] = $item;
 					$keys[$count++] = $key;
@@ -294,7 +295,7 @@ class AwaitFormOptions{
 			}
 			$bridge->rejectsAll(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_VERIFICATION_FAILED));
 			// 該当しなかった場合はフォーム不正とみなす
-			throw new AwaitFormOptionsParentException("An invalid button selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
+			throw new AwaitFormOptionsParentException("An invalid MenuElement selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 		}finally{
 			foreach($needDispose as $item){
 				$item->dispose();
