@@ -774,6 +774,7 @@ class MobKillerForm extends MenuOptions{
 		]);
 		//In this coroutine, all options are executed and competed against; only the winning option is reached, while the others are interrupted by an `AwaitFormOptionsChildException` (ERR_COROUTINE_ABORTED), and their return values are ignored.
 		//Conversely, by catching `AwaitFormOptionsChildException` (ERR_COROUTINE_ABORTED), it is possible to perform specific handling for the option that was not selected (v3.0.0 and later).
+		//If the form is canceled (e.g., logged out, rejected by the player, the player already has a GUI and opening it fails), an AwaitFormOptionsChildException with a code, as defined in AwaitFormException, will be thrown.
 		$this->entity->kill();
 	}
 
@@ -1326,7 +1327,7 @@ Await::f2c(function() use ($player): \Generator {
             ],
         );
 
-    } catch (AwaitFormOptionsParentException $e) {
+    } catch (AwaitFormOptionsParentException|FormValidationException $e) {
         if ($e->getCode() === AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED) {
             $player->sendMessage("Verification failed");
             return;
@@ -1337,6 +1338,9 @@ Await::f2c(function() use ($player): \Generator {
     }
 });
 ```
+
+Handling of the parent generator's `AwaitFormOptionsParentException` and `FormValidationException` is a **must**
+Failure to do so will cause the server to crash with a very long error message when an exception occurs
 
 ---
 
