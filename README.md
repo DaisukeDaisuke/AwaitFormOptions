@@ -124,12 +124,12 @@ Each option will yield from `$this->request($form);` and wait for the response. 
 
 > [!TIP]
 > `yield from $this->request()` must be called only once per generator.  
-> Calling it a second time in the same generator will throw a `AwaitFormOptionsInvalidValueException`.  
+> Calling it a second time in the same generator will throw a `AwaitFormOptionsExpectedCrashException`.  
 > If you need to re-show a form, return from the current generator and call it again from the parent context.
 >
 > Additionally, the following exceptions may be thrown from `request()`:
-> - `AwaitFormOptionsInvalidValueException`: When `request()` is called more than once in the same generator.
-> - `AwaitFormOptionsInvalidValueException`: When the provided form/button array is invalid.
+> - `AwaitFormOptionsExpectedCrashException`: When `request()` is called more than once in the same generator.
+> - `AwaitFormOptionsExpectedCrashException`: When the provided form/button array is invalid.
 > - `AwaitFormOptionsChildException`: If the player rejects the form, input is invalid, or the player logs out.
 >
 > The try-catch in the child generator may be omitted, but is not recommended.
@@ -1149,6 +1149,25 @@ PMServerUI (https://github.com/DavyCraft648/PMServerUI) is a great library for b
 However, AwaitFormOptions provides a more powerful and flexible system that supports deeply nested options, persistent context between form steps, and asynchronous flow control.  
 While it is technically possible to recreate something like PMServerUI using AwaitFormOptions, the reverse is not true. PMServerUI cannot handle advanced patterns such as dynamic generator-based form logic, branching flows, or contextual state within multi-step UIs.  
 
+## ❓Why isn't `Dialog` supported by `AwaitFormOptions`?
+Since `dialog` is a very simple operation that does not require extending the API beyond `AwaitForm::dialog`, it was decided not to support it in `AwaitFormOptions`  
+Therefore, you must use `AwaitForm::dialog` directly without relying on the `AwaitFormOptions` ecosystem, and must manually handle `$form->request()` and `AwaitFormException`  
+
+
+```php
+Await::f2c(function() : \Generator{
+	try{
+		$menu = AwaitForm::dialog(
+			title: "aaaa",
+			content: "bbbb",
+		);;
+		$bool = yield from $menu->request($sender);
+	}catch(AwaitFormException|FormValidationException){
+		return;
+	}
+});
+```
+
 ---
 
 ## Handling child generator exceptions with `@throws AwaitFormOptionsChildException`
@@ -1193,6 +1212,9 @@ This keeps both humans and static analysis tools aligned 👍
 ## Annotating a child generator 🧩
 
 Any generator that can throw a child exception should declare it explicitly:
+If an `AwaitFormOptionsChildException` is thrown from a child generator, `AwaitFormOptions` will silently catch it
+This was originally a bug in v3.0.0, but because it was useful, it was accepted as part of the specification
+Remember to add `throws` to your generator functions and `getOptions`, as phpstan will complain otherwise!
 
 ```php
 /**
