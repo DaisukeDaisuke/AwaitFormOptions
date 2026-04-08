@@ -67,7 +67,7 @@ trait FormBridgeTrait{
 	 * Instruct AwaitFormOptions to add an elements
 	 * When this function is awaited, the parent coroutines receives the form response or exception
 	 *
-	 * @param array<FormControl|MenuElement|list<FormControl|MenuElement>|list<array{FormControl|MenuElement, mixed}>> $value
+	 * @param array{FormControl|MenuElement, mixed}|array<FormControl|MenuElement|list<FormControl|MenuElement>|list<array{FormControl|MenuElement, mixed}>> $value
 	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
 	final protected function request(array $value) : \Generator{
