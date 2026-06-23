@@ -1695,6 +1695,39 @@ Returning a value after `request()` is supported.
 Creating new asynchronous suspension points after `request()` is not.  
 These operations should be delegated to the parent generator, with the child generator merely returning the values.  
 
+## Architectural note
+
+The execution model is not driven by independent objects.
+
+Instead, AwaitFormOptions creates an internal coroutine coordination system composed of:
+
+- an AwaitFormOptions execution coroutine
+- a RequestResponseBridge
+- child generators
+- an AwaitForm driver
+
+User code typically interacts only with `sendFormAsync()` or `sendMenuAsync()`.
+
+```text
+User coroutine
+        │
+        ▼
+sendFormAsync() / sendMenuAsync()
+        │
+        ▼
+AwaitFormOptions internal coroutine
+        │
+        ├─ RequestResponseBridge
+        ├─ Child generators
+        └─ AwaitForm driver
+```
+
+All option objects, child generators, and bridge state are strongly referenced by the internal AwaitFormOptions execution flow.
+
+Coroutine suspension provided by AwaitGenerator keeps this object graph alive until the operation completes, fails, or is explicitly disposed.
+
+As a result, object lifetime is primarily determined by coroutine lifetime rather than by traditional object ownership patterns.
+
 # 1.1.0 Futures
 ## Nested Options
 
@@ -1848,8 +1881,6 @@ class ConfirmInputForm extends FormOptions{
 	}
 }
 ```
-
-
 
 ## 1.3.0 Future
 ### schedule
