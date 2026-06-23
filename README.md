@@ -1705,6 +1705,7 @@ Instead, AwaitFormOptions creates an internal coroutine coordination system comp
 - a RequestResponseBridge
 - child generators
 - an AwaitForm driver
+- A suspended coroutine provided by AwaitGenerator
 
 User code typically interacts only with `sendFormAsync()` or `sendMenuAsync()`.
 
