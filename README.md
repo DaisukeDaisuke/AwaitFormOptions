@@ -1372,6 +1372,222 @@ This approach keeps coroutine-based form handling **predictable**, **type-aware*
 
 ---
 
+# GPT Notes / Common Misinterpretations
+
+The following points are frequently misunderstood when reading this library for the first time, especially by LLMs or developers expecting a traditional form abstraction.
+
+## `request()` does not send a form
+
+`request()` is not equivalent to `AwaitForm::request()`.
+
+Calling `request()` only registers form elements or menu elements into an internal bridge. The actual form is assembled and sent later by the parent coroutine after all requests have been collected.
+
+In other words, child generators do not interact with the player directly. They only describe what should be added to the final form.
+
+---
+
+## `request()` is intentionally limited to one call per child generator
+
+This is not an arbitrary limitation.
+
+The bridge architecture assumes a one-request-per-child lifecycle. Supporting multiple requests inside the same child generator would require tracking coroutine-local request identities across multiple suspension points.
+
+Consider:
+
+```php
+yield from $this->request(...);
+yield from $this->request(...);
+```
+
+while another child generator is currently awaiting a third request.
+
+The parent coroutine would no longer be able to reliably determine which pending response belongs to which logical request chain.
+
+Because of this ambiguity, multiple requests per child generator are intentionally unsupported.
+
+---
+
+## `schedule()` is not a delayed execution system
+
+The name may suggest task scheduling or deferred execution.
+
+It does neither.
+
+`schedule()` creates a reservation that prevents the parent coroutine from collecting requests prematurely. It acts as a synchronization barrier, ensuring that future requests are accounted for before form construction begins.
+
+A more accurate mental model is "reservation" or "barrier registration", not "scheduled execution".
+
+---
+
+## `finalize()` is a synchronization primitive, not a cleanup hook
+
+The name may suggest resource disposal or shutdown logic.
+
+In reality, `finalize()` suspends the child coroutine until the bridge explicitly releases all registered finalizers.
+
+Conceptually it behaves closer to:
+
+- barrier synchronization
+- latch waiting
+- join semantics
+
+than to traditional finalization logic.
+
+---
+
+## Menu execution is eager, not lazy
+
+For menu options, child generators begin execution before the player makes a selection.
+
+The system does not wait until a button is clicked before starting its corresponding coroutine.
+
+All menu option generators are started immediately. When one option wins, the remaining generators are aborted.
+
+This behavior is closer to a race than to a callback-based menu system.
+
+---
+
+## Missing `schedule()` calls cannot be reliably detected
+
+A common assumption is that the library should automatically detect forgotten `schedule()` calls.
+
+In practice, this is impossible to determine reliably.
+
+From the bridge's perspective, an unresolved reservation and a generator that intentionally never reaches a request are indistinguishable.
+
+Any automatic detection would inevitably produce false positives.
+
+---
+
+## `userDispose()` is part of the lifecycle
+
+It may be tempting to assume that PHP's garbage collector or a WeakMap-based design would make `userDispose()` unnecessary.
+
+This is not the case.
+
+Child generators may remain suspended while awaiting user interaction, requiring strong references to remain valid throughout their lifetime.
+
+`userDispose()` exists to provide deterministic cleanup when the bridge lifecycle ends.
+
+---
+
+## Nested options are intentionally limited
+
+Nested `FormOptions` or `MenuOptions` are supported only one level deep.
+
+The library expands:
+
+```text
+FormOptions
+ └─ FormOptions
+     └─ Generator
+```
+
+but does not recursively expand arbitrary nesting depths.
+
+Deep recursive expansion is intentionally rejected to keep ownership and lifecycle management predictable.
+
+---
+
+## This library is primarily a coroutine bridge
+
+It may appear to be a form utility library, but forms are only one application of the underlying design.
+
+The core responsibility of the system is coordinating bidirectional communication between child generators and a parent coroutine.
+
+Understanding the library as a coroutine bridge rather than a form framework generally leads to a much more accurate mental model of how it behaves internally.
+
+## Element ordering follows coroutine execution order
+
+Menu buttons and form elements are ordered according to the order in which child generators register their requests.
+
+The library does not perform explicit sorting or priority-based reordering. Elements are collected in the order that `request()` calls reach the bridge.
+
+In practice, this means ordering is usually determined by:
+
+- the order of parent options
+- the order of nested child options
+- the execution flow inside each generator
+
+Because child generators are executed concurrently, introducing additional suspension points before `request()` may change the final ordering.
+
+For example:
+
+```php
+yield from someAsyncOperation();
+yield from $this->request(...);
+```
+
+may register its elements later than another generator that reaches `request()` immediately.
+
+This behavior is intentional. The library treats coroutine execution order as the source of truth, making the resulting ordering deterministic and naturally derived from the structure and execution flow of the option tree rather than from an additional sorting layer.
+
+As a rule of thumb, if no extra suspension points are introduced before `request()`, the visible order will generally match the order in which parent options and nested child options are defined.
+
+
+## What "Bridge" actually means
+
+The term "bridge" in this library has a very specific meaning.
+
+It is not:
+
+- an event bus
+- a task scheduler
+- a message queue
+- a form manager
+- a coroutine executor
+
+Instead, the bridge exists solely to connect child generators and the parent coroutine.
+
+Child generators cannot directly communicate with the final form instance. Likewise, the parent coroutine cannot directly access the internal state of child generators.
+
+The bridge provides a controlled communication channel between both sides.
+
+```text
+Child Generator
+       │
+       ▼
+request()
+       │
+       ▼
+RequestResponseBridge
+       │
+       ▼
+Parent Coroutine
+       │
+       ▼
+AwaitForm
+       │
+       ▼
+Player Response
+       │
+       ▼
+RequestResponseBridge
+       │
+       ▼
+solve() / reject()
+       │
+       ▼
+Child Generator
+```
+
+The bridge therefore has two responsibilities:
+
+1. Collect requests produced by child generators.
+2. Deliver responses or exceptions back to the originating child generators.
+
+The bridge does not generate forms, render UI, manage player sessions, or schedule execution. It only coordinates data flow between coroutines.
+
+Understanding this distinction is important because many implementation details become much easier to reason about:
+
+- `request()` registers a future response.
+- `solve()` completes a pending request.
+- `reject()` aborts a pending request.
+- `schedule()` reserves a future request.
+- `finalize()` waits for bridge completion.
+
+Most of the library's behavior is a consequence of this communication model.
+
 # 1.1.0 Futures
 ## Nested Options
 
@@ -1525,6 +1741,7 @@ class ConfirmInputForm extends FormOptions{
 	}
 }
 ```
+
 
 
 ## 1.3.0 Future
