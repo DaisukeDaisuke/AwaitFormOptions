@@ -1588,6 +1588,113 @@ Understanding this distinction is important because many implementation details 
 
 Most of the library's behavior is a consequence of this communication model.
 
+
+## Form and Menu are fundamentally different execution models
+
+Although both APIs expose child generators and `request()`, Form and Menu execution models are intentionally different and should not be treated as interchangeable.
+
+### Form
+
+Forms are composed of multiple interactive controls such as:
+
+- input fields
+- toggles
+- sliders
+- dropdowns
+
+Every child generator contributes part of a single form.
+
+After the form is submitted:
+
+- all child generators are expected to complete successfully
+- each child generator receives the value associated with its request
+
+If the player closes the form or otherwise fails to provide a response:
+
+- every waiting child generator receives `AwaitFormOptionsChildException`
+
+A Form therefore behaves as a collective operation where all participating child generators are expected to receive a result.
+
+---
+
+### Menu
+
+Menus are composed of selectable entries.
+
+Each child generator represents a possible choice.
+
+Unlike Forms, all menu generators begin execution immediately and continue running until they reach their first `request()`.
+
+Once all requests have been collected and the menu is shown:
+
+- selecting an entry produces exactly one winner
+- the winning generator resumes from `request()` and continues execution
+- all other generators receive `AwaitFormOptionsChildException`
+
+A Menu therefore behaves as a race between child generators rather than a collective operation.
+
+Only one generator is expected to complete normally.
+
+---
+
+### Mental model
+
+Form:
+
+```text
+Generator A -> request()
+Generator B -> request()
+Generator C -> request()
+
+Player submits form
+
+Generator A receives value
+Generator B receives value
+Generator C receives value
+```
+
+Menu:
+
+```text
+Generator A -> request()
+Generator B -> request()
+Generator C -> request()
+
+Player selects B
+
+Generator B resumes
+Generator A aborted
+Generator C aborted
+```
+
+Many implementation details become easier to understand once Forms are viewed as a shared result model and Menus are viewed as a winner-takes-all race model.
+
+
+## `request()` should be considered a terminal suspension point
+
+After a child generator reaches `request()`, introducing additional asynchronous suspension points is unsupported.
+
+Example:
+
+```php
+yield from $this->request(...);
+yield from someAsyncOperation();
+```
+
+The second `yield from` is undefined behavior.
+
+Depending on execution flow, this may lead to:
+
+- unexpected behavior
+- orphaned coroutines
+- resource leaks
+- unresolved bridge state
+
+Returning a value after `request()` is supported.
+
+Creating new asynchronous suspension points after `request()` is not.  
+These operations should be delegated to the parent generator, with the child generator merely returning the values.  
+
 # 1.1.0 Futures
 ## Nested Options
 
