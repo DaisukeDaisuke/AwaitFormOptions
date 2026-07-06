@@ -184,7 +184,7 @@ class HPFormOptions extends FormOptions{
 		];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->player);
 	}
 }
@@ -226,12 +226,16 @@ public function a(PlayerItemUseEvent $event): void {
 
 Each instance is handled independently.
 
+This means each use should create a separate option object. Do not reuse the same option instance across multiple form or menu executions.
+
 ## Standalone
 
 sendForm and sendMenu may also be called standalone. In that case:
-- No exception is thrown, even if the user cancels the form.
+- Player rejection and parent-level form failures are swallowed by the standalone wrapper.
 - The generator's return value is discarded.
 - The functions always return void (null).
+
+Developer errors such as invalid option types, invalid request values, `AwaitFormOptionsExpectedCrashException`, and `AwaitFormOptionsInvalidValueException` are not swallowed by this guarantee.
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
@@ -251,7 +255,8 @@ public function a(PlayerItemUseEvent $event): void {
 ## Menu Support
 
 AwaitFormOptions also supports `menu` interactions.   
-Unselected menu options are discarded and not executed.  
+All menu child generators are started as a race and suspend at `request()` while their elements are collected.  
+After the player selects an element, only the selected generator resumes normally. Unselected generators are aborted with `AwaitFormOptionsChildException`.  
 
 > [!TIP]
 > When the form is completed, any button generators that were not selected will equally receive a `AwaitFormOptionsChildException` (since 3.0.1)
@@ -341,7 +346,7 @@ class NameMenuOptions extends MenuOptions{
 		];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->player, $this->options);
 	}
 }
@@ -370,7 +375,7 @@ public function a(PlayerItemUseEvent $event): void {
                     new NameMenuOptions($player, ["i", "j"]),
                 ]
             );
-        } catch (FormValidationException) {
+        } catch (FormValidationException|AwaitFormOptionsParentException) {
         }
     });
 }
@@ -381,7 +386,7 @@ public function a(PlayerItemUseEvent $event): void {
 ---
 
 ### 🧩 Menu Advanced Usage: Attaching Objects to Buttons
-Normally, MenuElement::button("label") returns a Button that maps to a string value.
+Normally, MenuElement::button("label") returns a `MenuElement` that maps to a string value.
 But what if you want to associate a more complex object, like a Player, Entity, or CustomData // with each button?
 
 You can do this easily by passing `[MenuElement::button(...), $value]` into the menu array.
@@ -394,7 +399,7 @@ $selected  = yield from $this->request([
 ]);
 ```
 #### In this format:
-- The first element is always a Button object.
+- The first element is always a `MenuElement` object.
 - The second element is the value that will be returned if the button is selected.
 - The returned result is mapped correctly even for duplicate labels or repeated values.
 - You can use any scalar or object, including players, entities, and custom classes.
@@ -476,7 +481,7 @@ class EntityNameMenuOptions extends MenuOptions{
 		return [$this->chooseEntity()];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->player, $this->entities);
 	}
 }
@@ -484,8 +489,11 @@ class EntityNameMenuOptions extends MenuOptions{
 
 ---
 
-## Generator Return Values Are Captured
-Each generator that you define in your FormOptions or MenuOptions class can return a value using the return statement. When the form is submitted, all return values from each generator are automatically collected into an array and returned from AwaitFormOptions::sendFormAsync() or sendMenuAsync().
+## Generator Return Values
+Each generator that you define in your FormOptions or MenuOptions class can return a value using the return statement.
+
+For forms, all participating generator return values are collected into an array and returned from `AwaitFormOptions::sendFormAsync()`.
+For menus, only the selected generator's return value is returned from `AwaitFormOptions::sendMenuAsync()`; aborted generators do not contribute return values.
 
 This allows you to treat each form step as a small function that produces a result, just like any other callable.
 
@@ -556,7 +564,7 @@ class SimpleButton extends MenuOptions{
 			$this->choose(1),
 		];
 	}
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->name, $this->id);
 	}
 }
@@ -675,7 +683,7 @@ class SimpleInput extends FormOptions{
 			$this->input(1),
 		];
 	}
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->text, $this->default, $this->placeholder, $this->id);
 	}
 }
@@ -787,7 +795,7 @@ class MobKillerForm extends MenuOptions{
 		];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->entity);
 	}
 }
@@ -869,7 +877,7 @@ class ConfirmInputForm extends FormOptions{
 		return [$this->confirmOnce()];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 
 	}
 }
@@ -956,7 +964,7 @@ class HpBasedFoodOptions extends MenuOptions{
 		return $result;
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 		unset($this->player);
 	}
 }
@@ -1014,20 +1022,20 @@ MenuElement::label(string $text) //  Static text label, for descriptions or inst
 
 ## ⚠️ Notes on `getOptions()`
 
-The `getOptions()` method must return an **array of `\Generator` instances**. Each generator represents a step in the asynchronous form process. Misuse of this method may result in exceptions or undefined behavior.
+The `getOptions()` method must return an array of child `\Generator` instances. It may also return one level of nested `FormOptions` or `MenuOptions` of the same kind. Each generator represents a step in the asynchronous form process. Misuse of this method may result in exceptions or undefined behavior.
 
 ---
 
 ### ❌ Mistake 1: Returning non-generators
 
 ```php
-// ❌ This will throw an exception because the array is not a list of generators
+// ❌ This will throw an exception because the array is not a list of generators or same-kind nested options
 public function getOptions(): array {
     return ["not a generator"];
 }
 ```
 
-✅ **Correct:** Ensure each item in the array is a generator using `yield`.  
+✅ **Correct:** Ensure each item in the array is a generator using `yield`, or a same-kind nested option object.  
 
 ```php
 public function getOptions(): array {
@@ -1075,7 +1083,7 @@ public function getOptions(): array {
 }
 ```
 
-✅ **Correct:** Returns a generator or form option, or a menu object (form and menu options cannot be mixed)
+✅ **Correct:** Return a generator or one level of nested option object of the same kind. Form options and menu options cannot be mixed, and deeper nesting is rejected.
 
 ---
 
@@ -1259,8 +1267,6 @@ This allows fine-grained branching without relying on exception type explosions.
 /**
  * @throws \DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException
  */
-use pocketmine\form\FormValidationException;
-
 public function editName(): \Generator {
     try {
         [$name] = yield from $this->request([
@@ -1293,8 +1299,6 @@ public function editName(): \Generator {
         }
 
         return null;
-    }catch(FormValidationException $e){
-        //form validation failed
     }
 }
 ```
@@ -1303,6 +1307,8 @@ Notes:
 
 * Even though you catch `AwaitFormOptionsChildException`,
   the error code may originate from `AwaitFormException`.
+* Child generators do not catch `FormValidationException` from `$this->request()`.
+  AwaitForm validation failures are converted on the parent side to `AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED`.
 * This design allows a **single catch block** with **precise branching** ✨
 
 ---
@@ -1672,7 +1678,7 @@ Many implementation details become easier to understand once Forms are viewed as
 
 ## `request()` should be considered a terminal suspension point
 
-After a child generator reaches `request()`, introducing additional asynchronous suspension points is unsupported.
+After a child generator reaches `request()`, introducing unrelated asynchronous suspension points is unsupported.
 
 Example:
 
@@ -1691,8 +1697,9 @@ Depending on execution flow, this may lead to:
 - unresolved bridge state
 
 Returning a value after `request()` is supported.
+`yield from $this->finalize(...)` is also supported as the built-in post-request synchronization point.
 
-Creating new asynchronous suspension points after `request()` is not.  
+Creating new unrelated asynchronous suspension points after `request()` is not.  
 These operations should be delegated to the parent generator, with the child generator merely returning the values.  
 
 ## Architectural note
@@ -1809,7 +1816,7 @@ class ConfirmInputForm extends FormOptions{
 		];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 
 	}
 }
@@ -1837,7 +1844,7 @@ array(1) {
 ## finalize()
 
 How can you collect information from nested forms **after all forms have completed**?  
-As of version 1.1.0, you can use `yield from $this->finalize(int priority);`!  
+As of version 1.1.0, you can use `yield from $this->finalize(int $priority = 0);`!  
 This allows your code block to pause until all other forms are either completed, finalized, or in an awaiting state—after which execution resumes!  
   
 > [!TIP]  
@@ -1877,7 +1884,7 @@ class ConfirmInputForm extends FormOptions{
 		];
 	}
 
-	public function userDispose() : void{
+	protected function userDispose() : void{
 
 	}
 }
@@ -1914,7 +1921,7 @@ class HpBasedFoodOptions extends MenuOptions{
 		];
 	}
 	
-	public function userDispose() : void{
+	protected function userDispose() : void{
 	    
 	}
 }
@@ -1924,7 +1931,7 @@ class HpBasedFoodOptions extends MenuOptions{
 ### A new abstract has been added: userDispose
 Each option must implement userDispose to handle garbage collection  
 ```php
-public function userDispose() : void{
+protected function userDispose() : void{
 	//As of 2.0.0, options must implement userDispose
 }
 ```
@@ -2010,3 +2017,8 @@ Fixed gc leak (memory leak) when form is abandoned　　
 - The button class has been replaced by \cosmicpe\awaitform\MenuElement
 - The number of elements available in MenuElement has increased
 - phpdoc has been added for some APIs
+
+# 4.0.1 Changelog
+- ✨ `FormOptions` and `MenuOptions` can now call `yield from $this->finalize(int $priority = 0);`.
+  The priority argument is passed to the internal bridge finalizer, where higher numbers are released first.
+- 📝 README wording was clarified for standalone error handling, menu generator races, nested `getOptions()` values, child exception handling, option instance reuse, and post-`request()` synchronization.

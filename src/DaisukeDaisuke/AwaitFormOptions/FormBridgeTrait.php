@@ -46,8 +46,8 @@ trait FormBridgeTrait{
 	/**
 	 * Wait until all other options are complete
 	 */
-	final protected function finalize() : \Generator{
-		yield from $this->bridge->finalize();
+	final protected function finalize(int $priority = 0) : \Generator{
+		yield from $this->bridge->finalize($priority);
 	}
 
 	/**
