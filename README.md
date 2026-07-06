@@ -2018,7 +2018,7 @@ Fixed gc leak (memory leak) when form is abandoned　　
 - The number of elements available in MenuElement has increased
 - phpdoc has been added for some APIs
 
-# 4.0.1 Changelog
+# 4.0.3 Changelog
 - ✨ `FormOptions` and `MenuOptions` can now call `yield from $this->finalize(int $priority = 0);`.
   The priority argument is passed to the internal bridge finalizer, where higher numbers are released first.
 - 📝 README wording was clarified for standalone error handling, menu generator races, nested `getOptions()` values, child exception handling, option instance reuse, and post-`request()` synchronization.
