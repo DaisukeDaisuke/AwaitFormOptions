@@ -6,6 +6,7 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 
 use cosmicpe\awaitform\AwaitForm;
 use cosmicpe\awaitform\AwaitFormException;
+use cosmicpe\awaitform\FormControl;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExpectedCrashException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException;
@@ -44,6 +45,42 @@ class AwaitFormOptions{
 	}
 
 	/**
+	 * Sends one custom form assembled from FormOptions child generators.
+	 *
+	 * Each FormOptions instance contributes zero or more child generators from
+	 * getOptions(). Every child must call yield from $this->request(...) once,
+	 * unless it was intentionally omitted by returning an empty getOptions() array.
+	 * One level of nested FormOptions is supported.
+	 *
+	 * Form request values must be FormControl instances, or [FormControl, key]
+	 * tuples. After the player submits the form, every waiting child generator is
+	 * resumed with its keyed response array. The return value preserves both the
+	 * top-level $options keys and each FormOptions::getOptions() key. If an option
+	 * returns no child generators, its result is an empty array.
+	 *
+	 * ```php
+	 * $result = yield from AwaitFormOptions::sendFormAsync(
+	 *     player: $player,
+	 *     title: "Profile",
+	 *     options: [
+	 *         "profile" => new ProfileFormOptions($player),
+	 *     ],
+	 * );
+	 *
+	 * // Example shape:
+	 * // [
+	 * //     "profile" => [
+	 * //         "name" => "Steve",
+	 * //     ],
+	 * // ]
+	 * ```
+	 *
+	 * AwaitForm rejection, logout, or validation failures are reported to the
+	 * caller as AwaitFormOptionsParentException. Child generators receive
+	 * AwaitFormOptionsChildException through request() for the same failure.
+	 * Developer mistakes such as invalid option types or invalid request values
+	 * are reported as AwaitFormOptionsExpectedCrashException subclasses.
+	 *
 	 * @param array<FormOptions> $options Awaitable form option providers
 	 * @throws FormValidationException|AwaitFormOptionsParentException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
 	 */
@@ -100,20 +137,24 @@ class AwaitFormOptions{
 					if(is_array($item)){
 						if(!(array_is_list($item) && count($item) === 2)){
 							if(array_is_list($item) && count($item) !== 2){
-								$bridge->reject(
-									$id,
-									new AwaitFormOptionsExpectedCrashException(
-										"The request value must be a 2-element list array [MenuElement, key], but an array with " . count($item) . " element(s) was given. \n" .
-										" (key: " . $key . "). " .
-										"Ensure that your form returns an array like [MenuElement, SelectedKey]. " .
-										"See also: AwaitFormOptions::sendFormAsync()"
-									)
+								$exception = new AwaitFormOptionsExpectedCrashException(
+									"The request value must be a 2-element list array [FormControl, key], but an array with " . count($item) . " element(s) was given. \n" .
+									" (key: " . $key . "). " .
+									"Ensure that your form returns an array like [FormControl, SelectedKey]. " .
+									"See also: AwaitFormOptions::sendFormAsync()"
 								);
+								$bridge->reject($id, $exception);
+								throw $exception;
 							}else{
 								$item = array_values($item);
 							}
 						}
 						[$item, $key] = $item;
+					}
+					if(!$item instanceof FormControl){
+						$exception = new AwaitFormOptionsExpectedCrashException("FormControl is required, see also AwaitFormOptions::sendFormAsync()");
+						$bridge->reject($id, $exception);
+						throw $exception;
 					}
 					// is_object check is required: Player can be scalar-converted, but keys must be strictly scalar
 					/** @phpstan-ignore function.impossibleType */
@@ -140,7 +181,12 @@ class AwaitFormOptions{
 
 				$bridge->tryFinalize();
 
-				return array_combine($options_keys, $bridge->getReturns());
+				$returns = $bridge->getReturns();
+				$result = [];
+				foreach($options_keys as $id => $key){
+					$result[$key] = $returns[$id] ?? [];
+				}
+				return $result;
 			}catch(AwaitFormException $awaitFormException){
 				$bridge->rejectsAll(new AwaitFormOptionsChildException("", $awaitFormException->getCode()));
 				throw new AwaitFormOptionsParentException("Unhandled AwaitFormOptionsParentException", $awaitFormException->getCode());
@@ -174,6 +220,38 @@ class AwaitFormOptions{
 	}
 
 	/**
+	 * Sends one menu assembled from MenuOptions child generators.
+	 *
+	 * Every menu child generator is started as part of a race and should call
+	 * yield from $this->request(...) once. Menu request values must be MenuElement
+	 * instances, or [MenuElement, key] tuples. One level of nested MenuOptions is
+	 * supported.
+	 *
+	 * After the player selects a menu element, only the generator that registered
+	 * the selected request is resumed normally. Its return value becomes the return
+	 * value of sendMenuAsync(). All other waiting menu generators are aborted with
+	 * AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED; their return values
+	 * are ignored even if they catch the abort and return normally.
+	 *
+	 * ```php
+	 * $selected = yield from AwaitFormOptions::sendMenuAsync(
+	 *     player: $player,
+	 *     title: "Food",
+	 *     content: "Choose one",
+	 *     buttons: [
+	 *         new FoodMenuOptions($player),
+	 *     ],
+	 * );
+	 *
+	 * // $selected is the return value from the selected MenuOptions generator.
+	 * ```
+	 *
+	 * AwaitForm rejection, logout, or validation failures are reported to the
+	 * caller as AwaitFormOptionsParentException. Child generators receive
+	 * AwaitFormOptionsChildException through request() for the same failure.
+	 * Developer mistakes such as invalid option types or invalid request values
+	 * are reported as AwaitFormOptionsExpectedCrashException subclasses.
+	 *
 	 * @param array<MenuOptions> $buttons Awaitable menu option providers
 	 * @return \Generator<mixed>
 	 * @throws FormValidationException|AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException I don't write \throwable because it's enough to piss off phpstan :<
@@ -241,15 +319,14 @@ class AwaitFormOptions{
 					if(is_array($item)){
 						if(!(array_is_list($item) && count($item) === 2)){
 							if(array_is_list($item) && count($item) !== 2){
-								$bridge->reject(
-									$id,
-									new AwaitFormOptionsExpectedCrashException(
-										"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
-										" (key: " . $key . "). " .
-										"Ensure that your form returns an array like [Button, SelectedKey]. " .
-										"See also: AwaitFormOptions::sendMenuAsync()"
-									)
+								$exception = new AwaitFormOptionsExpectedCrashException(
+									"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
+									" (key: " . $key . "). " .
+									"Ensure that your form returns an array like [Button, SelectedKey]. " .
+									"See also: AwaitFormOptions::sendMenuAsync()"
 								);
+								$bridge->reject($id, $exception);
+								throw $exception;
 							}else{
 								$item = array_values($item);
 							}
@@ -258,7 +335,9 @@ class AwaitFormOptions{
 					}
 					if(!$item instanceof MenuElement){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("MenuElement is required, see also AwaitFormOptions::sendMenuAsync()"));
+						$exception = new AwaitFormOptionsExpectedCrashException("MenuElement is required, see also AwaitFormOptions::sendMenuAsync()");
+						$bridge->reject($id, $exception);
+						throw $exception;
 					}
 					$flatButtons[$counter++] = $item;
 					$keys[$count++] = $key;

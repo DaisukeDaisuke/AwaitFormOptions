@@ -23,7 +23,13 @@ trait FormBridgeTrait{
 	private bool $disposed = false;
 
 	/**
+	 * Attaches the shared request/response bridge to this option instance.
+	 *
+	 * Option instances are single-use. Once dispose() has been called, setting a new
+	 * bridge would allow stale coroutine state to be reused, so it is rejected early.
+	 *
 	 * @internal
+	 * @throws AwaitFormOptionsInvalidValueException
 	 */
 	final public function setBridge(RequestResponseBridge $bridge) : void{
 		if($this->isDisposed()){
@@ -33,6 +39,9 @@ trait FormBridgeTrait{
 	}
 
 	/**
+	 * Marks this option instance as disposed, drops internal bridge references, and
+	 * gives the concrete option a chance to release user-owned resources.
+	 *
 	 * @internal
 	 */
 	final public function dispose() : void{
@@ -41,18 +50,31 @@ trait FormBridgeTrait{
 		$this->userDispose();
 	}
 
+	/**
+	 * Releases resources owned by the concrete option implementation.
+	 *
+	 * This hook is called by dispose() after bridge state has been detached.
+	 */
 	abstract protected function userDispose() : void;
 
 	/**
-	 * Wait until all other options are complete
+	 * Suspends this child generator until the parent form/menu has received the
+	 * player response and all request() calls have been solved.
+	 *
+	 * Higher priority values are resumed first when the parent calls tryFinalize().
+	 *
+	 * @return \Generator<mixed>
 	 */
 	final protected function finalize(int $priority = 0) : \Generator{
 		yield from $this->bridge->finalize($priority);
 	}
 
 	/**
-	 * Form submissions will be temporarily suspended until all bookings are resolved
-	 * If you don't call request(), the coroutine will be deadlocked forever, so be sure to call it
+	 * Reserves one future request() call.
+	 *
+	 * Use this when the generator must await something before reaching request().
+	 * The parent will wait for all reserved requests in getAllExpected(); therefore,
+	 * a scheduled generator must eventually call request() exactly once.
 	 *
 	 * @throws AwaitFormOptionsExpectedCrashException
 	 */
@@ -64,10 +86,16 @@ trait FormBridgeTrait{
 	}
 
 	/**
-	 * Instruct AwaitFormOptions to add an elements
-	 * When this function is awaited, the parent coroutines receives the form response or exception
+	 * Registers form controls or menu elements with the parent bridge and suspends
+	 * until the parent solves this request.
+	 *
+	 * A single `[FormControl|MenuElement, key]` tuple is normalized to a one-item
+	 * request list. A generator may call request() only once; a second call is
+	 * treated as an expected crash because the parent request accounting would no
+	 * longer be reliable.
 	 *
 	 * @param array{FormControl|MenuElement, mixed}|array<FormControl|MenuElement|list<FormControl|MenuElement>|list<array{FormControl|MenuElement, mixed}>> $value
+	 * @return \Generator<mixed>
 	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
 	final protected function request(array $value) : \Generator{
@@ -105,10 +133,16 @@ trait FormBridgeTrait{
 		}
 	}
 
+	/**
+	 * Returns whether this option instance has already been disposed.
+	 */
 	public function isDisposed() : bool{
 		return $this->disposed;
 	}
 
+	/**
+	 * Updates the local disposed flag.
+	 */
 	private function setDisposed(bool $disposed) : void{
 		$this->disposed = $disposed;
 	}

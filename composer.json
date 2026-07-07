@@ -7,7 +7,8 @@
         "sof3/await-generator": "^3.6"
     },
     "require-dev": {
-        "phpstan/phpstan": "*"
+        "phpstan/phpstan": "*",
+        "phpunit/phpunit": "^13.2"
     },
     "autoload": {
         "classmap": ["src"]

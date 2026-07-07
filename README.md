@@ -2022,3 +2022,15 @@ Fixed gc leak (memory leak) when form is abandoned　　
 - ✨ `FormOptions` and `MenuOptions` can now call `yield from $this->finalize(int $priority = 0);`.
   The priority argument is passed to the internal bridge finalizer, where higher numbers are released first.
 - 📝 README wording was clarified for standalone error handling, menu generator races, nested `getOptions()` values, child exception handling, option instance reuse, and post-`request()` synchronization.
+
+# 4.0.4 Changelog
+- 🐛 Fixed menu race return-value mapping when `schedule()` or another await delays a child generator before `request()`.
+  Menu results are now stored by the actual request ID that was solved, not by the generator array index.
+- 🧯 Aborted menu generators no longer overwrite the selected generator's return value when they catch `AwaitFormOptionsChildException` and return normally.
+- 🧩 `FormOptions::getOptions()` may safely return `[]`.
+  `sendFormAsync()` now preserves the top-level option key and returns an empty result array for that option.
+- 🛡️ Form requests now reject `MenuElement` values early, and menu requests continue to require `MenuElement`.
+  Invalid request tuples now stop as `AwaitFormOptionsExpectedCrashException` instead of continuing through parent-side assembly.
+- 🔤 Added the correctly spelled `AwaitFormOptionsException` base class while keeping the existing `AwaitFormOptionsExcption` typo for compatibility.
+- 🧪 Added PHPUnit coverage for request collection, menu race ID mapping, return storage, finalizer priority, rejection, abort, and invalid solve handling.
+- phpdoc has been improved with GPT 5.5

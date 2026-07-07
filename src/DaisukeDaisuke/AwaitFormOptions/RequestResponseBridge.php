@@ -6,7 +6,7 @@ namespace DaisukeDaisuke\AwaitFormOptions;
 
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsAbortException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsExcption;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsException;
 use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\AwaitException;
 use SOFe\AwaitGenerator\Channel;
@@ -21,23 +21,31 @@ class RequestResponseBridge{
 
 	private int $reservesId = 0;
 
-	/** @var array<int, Channel<list<array{FormControl|MenuElement, mixed}>|array<int, Channel<list<FormControl|MenuElement>>>>> 各リクエストごとの入力チャネル */
+	/** @var array<int, Channel<list<FormControl|MenuElement|array{FormControl|MenuElement, mixed}>>> Request payload channels keyed by request ID. */
 	private array $pendingRequest = [];
 
-	/** @var array<int, \Closure> 各リクエストに対する応答チャネル */
+	/** @var array<int, \Closure(mixed=): void> Response resolvers keyed by request ID. */
 	private array $pendingSend = [];
-	/** @var array<\Closure> */
+	/** @var array<int, \Closure(\Throwable): void> Response rejectors keyed by request ID. */
 	private array $rejects = [];
 
-	/** @var array<int, array<int, mixed>|array<mixed>|array<int, array<mixed>|array<int, array<array<mixed>>>>> */
+	/** @var array<int, mixed> Child generator return values keyed by owner/request ID. */
 	private array $returns = [];
 	/** @var array<int, list<Channel<null>>> */
 	private array $finalizeList = [];
-	/** @var list<Channel<int>> */
+	/** @var array<int, Channel<int>> Future request reservations keyed by reservation ID. */
 	private array $reserves = [];
+	/** Request ID currently being solved; used to map menu race returns back to the selected request. */
+	private ?int $solvingRequestId = null;
+	/** Whether a menu race has already stored the selected generator's return value. */
+	private bool $raceResolved = false;
 
 	/**
-	 * クライアントから値を送り、応答を待つ
+	 * Registers a request payload and suspends until the parent coroutine provides
+	 * the response for this request ID.
+	 *
+	 * If $reserved is provided, this request fulfills the matching schedule()
+	 * reservation and unblocks getAllExpected().
 	 *
 	 * @param list<array{FormControl|MenuElement, mixed}>|list<FormControl|MenuElement> $value    要求する値
 	 * @param ?int  $reserved 予約id
@@ -63,7 +71,11 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * 将来のrequestを予約する。
+	 * Reserves one future request() call and returns its reservation ID.
+	 *
+	 * The reservation is consumed when request() is later called with the returned
+	 * ID. getAllExpected() waits for all outstanding reservations before returning
+	 * the collected request payloads.
 	 */
 	public function schedule() : int{
 		$id = $this->reservesId++;
@@ -72,8 +84,12 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * 要求を全て取得する。要求が未完の場合はそれまで待つ
-	 * もしrequestが中途半端だった場合デットロックする
+	 * Waits for all scheduled requests, then returns every registered request
+	 * payload keyed by request ID.
+	 *
+	 * A reservation created by schedule() must eventually be fulfilled by request().
+	 * Otherwise this generator intentionally remains suspended because the parent
+	 * cannot safely assemble the form/menu with an unknown future request.
 	 *
 	 * @return \Generator<int, mixed>
 	 */
@@ -97,35 +113,41 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * 特定のリクエストIDに対して応答を送る
+	 * Sends the parent response to a waiting child request.
+	 *
+	 * During the resolver call, $solvingRequestId is set so a completing menu race
+	 * can store the selected generator return value under the actual request ID.
 	 *
 	 * @param int   $id    応答先ID
 	 * @param mixed $value 応答する値
+	 * @throws \LogicException If the request ID is not waiting for a response.
 	 */
 	public function solve(int $id, mixed $value) : void{
 		if(!isset($this->pendingSend[$id])){
 			throw new \LogicException("未登録のIDです: $id");
 		}
-		($this->pendingSend[$id])($value);
-
+		$resolve = $this->pendingSend[$id];
 		unset($this->rejects[$id], $this->pendingSend[$id]);
+
+		$this->solvingRequestId = $id;
+		try{
+			$resolve($value);
+		}finally{
+			$this->solvingRequestId = null;
+		}
 	}
 
 	/**
-	 * Calls reject() on all managed generators with the given exception.
+	 * Rejects every waiting child request with the given child exception.
 	 *
-	 * ⚠ If any rejection results in an uncaught exception, the loop will terminate immediately.
-	 * This can leave remaining generators in an unrejected state, causing memory leaks due to
-	 * uncollected resources in still-pending generators.
+	 * AwaitFormOptionsChildException leaking out of a child generator is treated as
+	 * a completed abort and is swallowed by abort(). If a child catches this
+	 * exception and throws a different exception, that exception is allowed to
+	 * propagate and the loop stops.
 	 *
-	 * This behavior is by design in fatal environments, where an uncaught exception from a child
-	 * generator is considered a crash condition and should propagate immediately. However, in
-	 * non-fatal environments, such early termination can prevent proper cleanup.
+	 * Note: non-child exceptions thrown by child code may propagate to the caller.
 	 *
-	 * To ensure all generators are properly cleaned up regardless of crash behavior,
-	 * use abortAll() instead.
-	 *
-	 * @param AwaitFormOptionsChildException $throwable The exception to pass to each reject handler.
+	 * @param AwaitFormOptionsChildException $throwable The exception to pass to each waiting child.
 	 */
 	public function rejectsAll(AwaitFormOptionsChildException $throwable) : void{
 		foreach($this->rejects as $id => $reject){
@@ -134,15 +156,10 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * Safely aborts all managed generators by sending them an AwaitFormOptionsAbortException.
+	 * Aborts every waiting child request with ERR_COROUTINE_ABORTED.
 	 *
-	 * Unlike rejectsAll(), this method guarantees that all reject() calls are attempted,
-	 * even if some of them throw exceptions. This ensures proper cleanup of all pending
-	 * generators, avoiding memory leaks or stuck resources.
-	 *
-	 * This is intended for controlled shutdowns where safe cleanup is preferred over crash behavior.
-	 *
-	 * @throws \Throwable
+	 * AwaitFormOptionsChildException itself is swallowed by abort(). Non-child
+	 * exceptions thrown by child code are still allowed to propagate.
 	 */
 	public function abortAll() : void{
 		foreach($this->rejects as $id => $reject){
@@ -151,15 +168,18 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * Aborts a pending asynchronous operation associated with a given identifier.
+	 * Aborts a single pending request.
 	 *
-	 * This method attempts to reject or terminate an operation identified by the provided ID.
-	 * If the operation cannot be aborted or an exception related to the abort process occurs,
-	 * the method safely handles it and returns a failure status.
+	 * If $throwable is omitted, the child receives AwaitFormOptionsChildException
+	 * with ERR_COROUTINE_ABORTED. A leaked child exception is treated as a successful
+	 * abort because it means the child coroutine has been released.
 	 *
 	 * @param int $id The unique identifier of the asynchronous operation to be aborted.
+	 * @param AwaitFormOptionsChildException|null $throwable Exception to send to the child.
 	 *
-	 * @return bool Returns true if the operation was successfully aborted; false otherwise.
+	 * @return bool Returns true if a reject handler was found or the child exception leaked; false otherwise.
+	 *
+	 * Note: non-child exceptions thrown by child code may propagate to the caller.
 	 */
 	public function abort(int $id, ?AwaitFormOptionsChildException $throwable = null) : bool{
 		$throwable ??= new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED);
@@ -171,20 +191,30 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * Rejects a request with a specified identifier by invoking the associated rejection handler
-	 * with the provided throwable. Removes the associated handlers upon rejection.
+	 * Rejects a waiting request by invoking its Await promise reject handler.
 	 *
-	 * This method attempts to reject the child generator corresponding to the specified ID
-	 * by throwing an exception within its coroutine. If the child generator catches (i.e., swallows)
-	 * the exception using a try-catch block, the exception does not leak to the parent coroutine.
-	 * However, if the exception is not caught within the child generator, it will propagate (leak)
-	 * to the parent coroutine (generator).
+	 * The purpose of this method is to interrupt the child generator, let it reach
+	 * a completed/released state, and avoid retaining coroutine resources forever.
+	 * The child may catch the AwaitFormOptionsException passed in $throwable and
+	 * finish cleanup normally, or it may intentionally let that exception leak to
+	 * the caller. Child code may also throw a different exception while handling
+	 * the rejection; in that case reject() propagates that exception and the caller
+	 * should treat it as a crash.
+	 *
+	 * If the reject handler exists and the rejection does not propagate out of the
+	 * child generator, this method returns true. If no reject handler exists for
+	 * the ID, it returns false.
+	 *
+	 * Resolver and rejector references are removed regardless of the outcome.
 	 *
 	 * @param int                      $id        The unique identifier for the request to reject.
-	 * @param AwaitFormOptionsExcption $throwable The throwable used to reject the request.
+	 * @param AwaitFormOptionsException $throwable The throwable used to reject the request.
 	 * @return bool Returns true if a rejection handler was found and successfully invoked; otherwise, returns false.
+	 *
+	 * Note: leaking the provided AwaitFormOptionsException is an intentional
+	 * control-flow option for callers that want the rejection to crash upward.
 	 */
-	public function reject(int $id, AwaitFormOptionsExcption $throwable) : bool{
+	public function reject(int $id, AwaitFormOptionsException $throwable) : bool{
 		try{
 			if(isset($this->rejects[$id])){
 				($this->rejects[$id])($throwable);
@@ -214,15 +244,13 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * Processes an array of asynchronous tasks and stores the results.
+	 * Runs multiple child generators and stores all of their return values.
 	 *
-	 * This method initiates an asynchronous coroutine using `Await::f2c()` to handle the provided
-	 * array of generator tasks concurrently. It uses `Await::All()` to await all tasks in parallel.
-	 * When an optional array of keys is provided, the returned results are combined with these keys
-	 * using `array_combine()`. Otherwise, the raw result array is stored.
+	 * This is used for nested FormOptions. When $keys is not null, generator
+	 * returns are remapped with array_combine($keys, $return). When $keys is null,
+	 * the raw return array from Await::all() is stored.
 	 *
-	 * The final results are then stored in the `returns` property, indexed by the specified unique
-	 * identifier ($id) and owner identifier ($owenr).
+	 * The stored shape is $returns[$id][$owenr].
 	 *
 	 * @param int                      $id    Unique identifier for storing the results.
 	 * @param int|string               $owenr Identifier for the owner of the result.
@@ -241,33 +269,44 @@ class RequestResponseBridge{
 	}
 
 	/**
-	 * Executes the given array of child generators concurrently in a race,
-	 * expecting exactly one generator to complete while the others receive a RaceLostException.
+	 * Starts menu child generators and records only the selected generator result.
 	 *
-	 * The result of the completed generator is stored using a key that combines the provided base identifier ($id)
-	 * with the index of the generator that finished first.
+	 * A menu generator normally completes after solve() resumes its request. The
+	 * return value is stored under the solved request ID, not under the generator
+	 * array index. Once the first generator result is stored, remaining waiting
+	 * generators are aborted. If they catch the abort and return normally, their
+	 * return values are ignored.
 	 *
-	 * @param int                      $id    The base identifier for storing the result.
+	 * @param int                      $id    Retained for call-site compatibility; not used for result mapping.
 	 * @param array<\Generator<mixed>> $array An array of child generators to execute in a race.
-	 * @throws \Throwable If an exception occurs within any child generator or during the execution of Await::safeRace.
+	 * @throws \LogicException If a generator completes without being resumed by solve().
+	 *
+	 * Note: aborting losing generators may propagate non-child exceptions thrown
+	 * by child code.
 	 *
 	 * @see solve Refer to the `solve` method for additional context on related functionality.
 	 */
 	public function race(int $id, array $array) : void{
-		foreach($array as $which => $generator){
-			Await::g2c($generator, function($result) use ($id, $which){
-				$this->returns[$id + $which] = $result;
+		foreach($array as $generator){
+			Await::g2c($generator, function($result) : void{
+				if($this->raceResolved){
+					return;
+				}
+				if($this->solvingRequestId === null){
+					throw new \LogicException("Menu race completed without a solved request ID");
+				}
+				$this->raceResolved = true;
+				$this->returns[$this->solvingRequestId] = $result;
 				$this->abortAll();
 			});
 		}
 	}
 
 	/**
-	 * Executes the given child generator once and stores its result using the specified key.
+	 * Runs one child generator and stores its return value.
 	 *
-	 * This method wraps the execution of a single generator within an asynchronous coroutine.
-	 * The generator is run to completion and its returned value is then stored in the results storage,
-	 * indexed by the provided unique identifier ($id) and owner key ($owenr).
+	 * This is used for direct FormOptions child generators. The stored shape is
+	 * $returns[$id][$owenr].
 	 *
 	 * @param int               $id        Unique identifier for storing the result.
 	 * @param int|string        $owenr     The key used to store the generator's return value.
@@ -280,12 +319,15 @@ class RequestResponseBridge{
 		});
 	}
 
+	/**
+	 * Returns the number of request payloads that have been registered and not yet collected.
+	 */
 	public function count() : int{
 		return count($this->pendingRequest);
 	}
 
 	/**
-	 * @return array<int, array<mixed>|array<int, array<mixed>|array<int, array<array<mixed>>>>>
+	 * @return array<int, mixed>
 	 */
 	public function getReturns() : array{
 		return $this->returns;
@@ -328,7 +370,13 @@ class RequestResponseBridge{
 		unset($this->finalizeList);
 	}
 
+	/**
+	 * Releases all internal bridge state.
+	 *
+	 * This object is single-use after dispose(); accessing it again is intentionally
+	 * invalid because all coroutine coordination arrays have been unset.
+	 */
 	public function dispose() : void{
-		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId);
+		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId, $this->solvingRequestId, $this->raceResolved);
 	}
 }
