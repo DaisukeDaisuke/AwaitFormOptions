@@ -2056,3 +2056,15 @@ Fixed gc leak (memory leak) when form is abandoned　　
 - 🔤 Added the correctly spelled `AwaitFormOptionsException` base class while keeping the existing `AwaitFormOptionsExcption` typo for compatibility.
 - 🧪 Added PHPUnit coverage for request collection, menu race ID mapping, return storage, finalizer priority, rejection, abort, and invalid solve handling.
 - phpdoc has been improved.
+
+# 5.0.0 Changelog
+- 🐛 Fixed menu race return-value mapping when the selected generator resumes after `finalize()`.
+  The selected request ID is now retained until the selected generator has returned.
+- 🛡️ Form request keys now always fail as `AwaitFormOptionsExpectedCrashException` when they are not scalar.
+  This prevents invalid form keys from being converted into an empty successful result.
+- 🔤 Added a correctly named `AwaitFormOptionsException.php` source file while preserving the deprecated `AwaitFormOptionsExcption` class for compatibility.
+- 🧩 Clarified `request()` payload shapes in the README.
+  Form requests use `FormControl` values or `[FormControl, scalar-key]`; menu requests use `MenuElement` values or `[MenuElement, mixed-value]`.
+- 📝 Updated README examples and API notes for separate option instances, menu return values, removed `throwExceptionInCaller`, empty menu contributions, and AwaitForm 1.0.0 element signatures.
+- 🧪 Added PHPUnit coverage for selected menu generators that return only after `finalize()`.
+- Improved phpdoc for option arrays, generator return types, bridge payloads, and exception references without requiring callers to catch `\Throwable`.

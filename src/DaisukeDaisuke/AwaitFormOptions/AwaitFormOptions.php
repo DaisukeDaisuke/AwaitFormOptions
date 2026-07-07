@@ -40,7 +40,6 @@ class AwaitFormOptions{
 	 *
 	 * @param array<int|string, FormOptions> $options
 	 * @throws AwaitFormOptionsExpectedCrashException
-	 * @throws \Throwable Other developer errors and user-code exceptions are not swallowed.
 	 */
 	public static function sendForm(Player $player, string $title, array $options) : void{
 		Await::f2c(function() use ($options, $title, $player){
@@ -91,7 +90,6 @@ class AwaitFormOptions{
 	 * @param array<int|string, FormOptions> $options Awaitable form option providers
 	 * @return \Generator<mixed, mixed, mixed, array<int|string, array<int|string, mixed>>>
 	 * @throws AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException
-	 * @throws \Throwable Other developer errors and user-code exceptions are not wrapped.
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -225,7 +223,6 @@ class AwaitFormOptions{
 	 *
 	 * @param array<int|string, MenuOptions> $buttons
 	 * @throws AwaitFormOptionsExpectedCrashException
-	 * @throws \Throwable Other developer errors and user-code exceptions are not swallowed.
 	 */
 	public static function sendMenu(Player $player, string $title, string $content, array $buttons) : void{
 		Await::f2c(function() use ($content, $buttons, $title, $player){
@@ -272,7 +269,6 @@ class AwaitFormOptions{
 	 * @param array<int|string, MenuOptions> $buttons Awaitable menu option providers
 	 * @return \Generator<mixed, mixed, mixed, mixed>
 	 * @throws AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException
-	 * @throws \Throwable Other developer errors and user-code exceptions are not wrapped.
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons) : \Generator{
 		$bridge = new RequestResponseBridge();
