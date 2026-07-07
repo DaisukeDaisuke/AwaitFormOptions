@@ -63,7 +63,7 @@ trait FormBridgeTrait{
 	 *
 	 * Higher priority values are resumed first when the parent calls tryFinalize().
 	 *
-	 * @return \Generator<mixed>
+	 * @return \Generator<mixed, mixed, mixed, void>
 	 */
 	final protected function finalize(int $priority = 0) : \Generator{
 		yield from $this->bridge->finalize($priority);
@@ -94,8 +94,8 @@ trait FormBridgeTrait{
 	 * treated as an expected crash because the parent request accounting would no
 	 * longer be reliable.
 	 *
-	 * @param array{FormControl|MenuElement, mixed}|array<FormControl|MenuElement|list<FormControl|MenuElement>|list<array{FormControl|MenuElement, mixed}>> $value
-	 * @return \Generator<mixed>
+	 * @param array{FormControl|MenuElement, mixed}|array<int|string, FormControl|MenuElement|array{FormControl|MenuElement, mixed}> $value
+	 * @return \Generator<mixed, mixed, mixed, mixed>
 	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
 	final protected function request(array $value) : \Generator{

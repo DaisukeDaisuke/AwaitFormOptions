@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DaisukeDaisuke\AwaitFormOptions;
 
-use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsAbortException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsException;
 use SOFe\AwaitGenerator\Await;
@@ -21,7 +20,7 @@ class RequestResponseBridge{
 
 	private int $reservesId = 0;
 
-	/** @var array<int, Channel<list<FormControl|MenuElement|array{FormControl|MenuElement, mixed}>>> Request payload channels keyed by request ID. */
+	/** @var array<int, Channel<list<FormControl|MenuElement|array<mixed>>>> Request payload channels keyed by request ID. */
 	private array $pendingRequest = [];
 
 	/** @var array<int, \Closure(mixed=): void> Response resolvers keyed by request ID. */
@@ -37,6 +36,8 @@ class RequestResponseBridge{
 	private array $reserves = [];
 	/** Request ID currently being solved; used to map menu race returns back to the selected request. */
 	private ?int $solvingRequestId = null;
+	/** Most recent solved request ID; used when a selected menu generator completes after finalize(). */
+	private ?int $lastSolvedRequestId = null;
 	/** Whether a menu race has already stored the selected generator's return value. */
 	private bool $raceResolved = false;
 
@@ -47,9 +48,9 @@ class RequestResponseBridge{
 	 * If $reserved is provided, this request fulfills the matching schedule()
 	 * reservation and unblocks getAllExpected().
 	 *
-	 * @param list<array{FormControl|MenuElement, mixed}>|list<FormControl|MenuElement> $value    要求する値
+	 * @param list<array<mixed>>|list<FormControl|MenuElement> $value    要求する値
 	 * @param ?int  $reserved 予約id
-	 * @return \Generator<mixed> 応答値
+	 * @return \Generator<mixed, mixed, mixed, mixed> 応答値
 	 *
 	 * @throws AwaitFormOptionsChildException
 	 */
@@ -91,7 +92,7 @@ class RequestResponseBridge{
 	 * Otherwise this generator intentionally remains suspended because the parent
 	 * cannot safely assemble the form/menu with an unknown future request.
 	 *
-	 * @return \Generator<int, mixed>
+	 * @return \Generator<mixed, mixed, mixed, array<int, list<FormControl|MenuElement|array<mixed>>>>
 	 */
 	public function getAllExpected() : \Generator{
 		$result = [];
@@ -117,6 +118,8 @@ class RequestResponseBridge{
 	 *
 	 * During the resolver call, $solvingRequestId is set so a completing menu race
 	 * can store the selected generator return value under the actual request ID.
+	 * $lastSolvedRequestId remains available after the resolver returns, because a
+	 * selected menu generator may suspend at finalize() before it returns.
 	 *
 	 * @param int   $id    応答先ID
 	 * @param mixed $value 応答する値
@@ -130,6 +133,7 @@ class RequestResponseBridge{
 		unset($this->rejects[$id], $this->pendingSend[$id]);
 
 		$this->solvingRequestId = $id;
+		$this->lastSolvedRequestId = $id;
 		try{
 			$resolve($value);
 		}finally{
@@ -253,9 +257,9 @@ class RequestResponseBridge{
 	 * The stored shape is $returns[$id][$owenr].
 	 *
 	 * @param int                      $id    Unique identifier for storing the results.
-	 * @param int|string               $owenr Identifier for the owner of the result.
-	 * @param array<\Generator<mixed>> $array An array of tasks (generators) to be processed asynchronously.
-	 * @param list<int|string>|null               $keys  Optional array of keys for mapping the results.
+	 * @param int|string                                     $owenr Identifier for the owner of the result.
+	 * @param array<int|string, \Generator<mixed, mixed, mixed, mixed>> $array An array of tasks (generators) to be processed asynchronously.
+	 * @param list<int|string>|null                          $keys  Optional array of keys for mapping the results.
 	 */
 	public function all(int $id, int|string $owenr, array $array, ?array $keys = []) : void{
 		Await::f2c(function() use ($owenr, $id, $array, $keys){
@@ -278,7 +282,7 @@ class RequestResponseBridge{
 	 * return values are ignored.
 	 *
 	 * @param int                      $id    Retained for call-site compatibility; not used for result mapping.
-	 * @param array<\Generator<mixed>> $array An array of child generators to execute in a race.
+	 * @param array<int|string, \Generator<mixed, mixed, mixed, mixed>> $array An array of child generators to execute in a race.
 	 * @throws \LogicException If a generator completes without being resumed by solve().
 	 *
 	 * Note: aborting losing generators may propagate non-child exceptions thrown
@@ -292,11 +296,12 @@ class RequestResponseBridge{
 				if($this->raceResolved){
 					return;
 				}
-				if($this->solvingRequestId === null){
+				$requestId = $this->solvingRequestId ?? $this->lastSolvedRequestId;
+				if($requestId === null){
 					throw new \LogicException("Menu race completed without a solved request ID");
 				}
 				$this->raceResolved = true;
-				$this->returns[$this->solvingRequestId] = $result;
+				$this->returns[$requestId] = $result;
 				$this->abortAll();
 			});
 		}
@@ -310,7 +315,7 @@ class RequestResponseBridge{
 	 *
 	 * @param int               $id        Unique identifier for storing the result.
 	 * @param int|string        $owenr     The key used to store the generator's return value.
-	 * @param \Generator<mixed> $generator The child generator to execute.
+	 * @param \Generator<mixed, mixed, mixed, mixed> $generator The child generator to execute.
 	 */
 	public function one(int $id, int|string $owenr, \Generator $generator) : void{
 		Await::f2c(function() use ($owenr, $id, $generator){
@@ -344,7 +349,7 @@ class RequestResponseBridge{
 	 * @param int $priority Priority level for the finalization process (default is 0).
 	 *                      Higher numbers indicate higher processing priority.
 	 *
-	 * @return \Generator<mixed> Yields until the finalization process is completed.
+	 * @return \Generator<mixed, mixed, mixed, void> Yields until the finalization process is completed.
 	 */
 	public function finalize(int $priority = 0) : \Generator{
 		$obj = new Channel();
@@ -377,6 +382,6 @@ class RequestResponseBridge{
 	 * invalid because all coroutine coordination arrays have been unset.
 	 */
 	public function dispose() : void{
-		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId, $this->solvingRequestId, $this->raceResolved);
+		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId, $this->solvingRequestId, $this->lastSolvedRequestId, $this->raceResolved);
 	}
 }

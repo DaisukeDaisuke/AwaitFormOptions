@@ -70,6 +70,42 @@ final class RequestResponseBridgeTest extends TestCase{
 		self::assertSame([1 => "late:selected"], $bridge->getReturns());
 	}
 
+	public function testMenuRaceStoresReturnAfterSelectedGeneratorFinalizes() : void{
+		$bridge = new RequestResponseBridge();
+
+		$selected = (function() use ($bridge) : Generator{
+			yield from $bridge->request([MenuElement::button("selected")]);
+			yield from $bridge->finalize();
+			return "selected";
+		})();
+
+		$loser = (function() use ($bridge) : Generator{
+			try{
+				yield from $bridge->request([MenuElement::button("loser")]);
+				return "loser";
+			}catch(AwaitFormOptionsChildException){
+				return "loser-aborted";
+			}
+		})();
+
+		$bridge->race(0, [$selected, $loser]);
+
+		$requests = null;
+		Await::f2c(function() use ($bridge, &$requests) : Generator{
+			$requests = yield from $bridge->getAllExpected();
+		});
+
+		self::assertSame([0, 1], array_keys($requests));
+
+		$bridge->solve(0, "selected");
+
+		self::assertSame([], $bridge->getReturns());
+
+		$bridge->tryFinalize();
+
+		self::assertSame([0 => "selected"], $bridge->getReturns());
+	}
+
 	public function testOneStoresGeneratorReturnUnderOwnerKey() : void{
 		$bridge = new RequestResponseBridge();
 
