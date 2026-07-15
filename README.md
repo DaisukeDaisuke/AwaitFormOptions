@@ -17,6 +17,7 @@ Designed to modularize complex user interactions and support clean, reusable, as
 - `MenuOptions` accepts only `MenuElement` values.
 - `sendFormAsync()` collects all child-generator return values.
 - `sendMenuAsync()` returns only the selected child generator's return value.
+- After a menu child request is solved, it must complete synchronously or wait only once on `finalize()`; `sendMenuAsync()` does not await arbitrary later asynchronous work.
 - `AwaitFormOptionsExpectedCrashException` represents developer misuse and should normally not be caught.
 - If this documentation conflicts with the final tagged source code or tests, the source code and tests are authoritative.
 
@@ -2092,3 +2093,38 @@ Fixed gc leak (memory leak) when form is abandoned　　
 - 📝 Updated README examples and API notes for separate option instances, menu return values, removed `throwExceptionInCaller`, empty menu contributions, and AwaitForm 1.0.0 element signatures.
 - 🧪 Added PHPUnit coverage for selected menu generators that return only after `finalize()`.
 - Improved phpdoc for option arrays, generator return types, bridge payloads, and exception references without requiring callers to catch `\Throwable`.
+
+
+## 5.1.0
+
+### Fixed
+
+- Fixed menu race result attribution so that only the child generator owning the selected request can provide the return value.
+- Fixed cancelled menu children being able to complete normally and interfere with the selected race result.
+- Fixed late menu-child completion callbacks accessing bridge state after the parent operation had already closed or disposed it.
+- Fixed a re-entrancy issue where pending request rejectors could be invoked more than once during synchronous coroutine completion.
+- Fixed `finalize()` registrations created while finalization was already in progress being discarded.
+- Fixed concurrent reuse of the same `FormOptions` or `MenuOptions` instance overwriting its active request bridge.
+
+### Changed
+
+- Added an explicit lifecycle state machine for menu races: inactive, open, selected, and closed.
+- Menu request IDs are now associated with their owning race child, including requests registered after `schedule()`.
+- Bridge cleanup now rejects all remaining child requests before detaching internal state.
+- Cleanup is now best-effort: all option instances are disposed even if one `userDispose()` implementation throws.
+- `dispose()` is now idempotent for both option instances and the request-response bridge.
+- Cleanup rethrows the first unexpected exception after all remaining resources have been released.
+- `rejectsAll()` and `abortAll()` now use the shared bridge-closing path.
+
+### Documentation
+
+- Documented that a selected menu child must complete synchronously after `request()` resumes, or suspend only once through `finalize()`.
+- Clarified that `sendMenuAsync()` does not wait for arbitrary asynchronous work started after the selected request has been solved.
+- Added final API contract details covering single-use option instances, nesting limits, request payload types, and return-value behavior.
+
+### Tests
+
+- Added coverage for menu children that catch cancellation and return normally.
+- Added coverage for late selected-child completion after bridge closure and disposal.
+- Added coverage preventing one option instance from being attached to multiple bridges.
+- Added coverage ensuring `finalize()` registrations made during finalization are preserved for the next finalization pass.

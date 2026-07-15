@@ -16,6 +16,12 @@ use cosmicpe\awaitform\FormControl;
 use cosmicpe\awaitform\MenuElement;
 
 class RequestResponseBridge{
+	private const RACE_INACTIVE = 0;
+	private const RACE_OPEN = 1;
+	private const RACE_SELECTED = 2;
+	private const RACE_CLOSED = 3;
+	/** Whether dispose() has detached the bridge from its parent operation. */
+	private bool $disposed = false;
 	private int $nextId = 0;
 
 	private int $reservesId = 0;
@@ -34,12 +40,16 @@ class RequestResponseBridge{
 	private array $finalizeList = [];
 	/** @var array<int, Channel<int>> Future request reservations keyed by reservation ID. */
 	private array $reserves = [];
-	/** Request ID currently being solved; used to map menu race returns back to the selected request. */
-	private ?int $solvingRequestId = null;
-	/** Most recent solved request ID; used when a selected menu generator completes after finalize(). */
-	private ?int $lastSolvedRequestId = null;
-	/** Whether a menu race has already stored the selected generator's return value. */
-	private bool $raceResolved = false;
+	/** Current lifecycle state of a menu race. */
+	private int $raceState = self::RACE_INACTIVE;
+	/** Request ID selected by the menu, if a menu race has selected one. */
+	private ?int $selectedRequestId = null;
+	/** Race child currently being started; used to associate its first request with it. */
+	private ?int $startingRaceChildId = null;
+	/** @var array<int, int> Request IDs keyed to their owning menu race child. */
+	private array $raceChildByRequestId = [];
+	/** @var array<int, int> Reservation IDs keyed to their owning menu race child. */
+	private array $raceChildByReserveId = [];
 
 	/**
 	 * Registers a request payload and suspends until the parent coroutine provides
@@ -56,6 +66,10 @@ class RequestResponseBridge{
 	 */
 	public function request(mixed $value, ?int $reserved = null) : \Generator{
 		$id = $this->nextId++;
+		$raceChildId = $this->startingRaceChildId ?? ($reserved === null ? null : ($this->raceChildByReserveId[$reserved] ?? null));
+		if($raceChildId !== null){
+			$this->raceChildByRequestId[$id] = $raceChildId;
+		}
 
 		$this->pendingRequest[$id] = new Channel();
 		$this->pendingRequest[$id]->sendWithoutWait($value);
@@ -80,6 +94,9 @@ class RequestResponseBridge{
 	 */
 	public function schedule() : int{
 		$id = $this->reservesId++;
+		if($this->startingRaceChildId !== null){
+			$this->raceChildByReserveId[$id] = $this->startingRaceChildId;
+		}
 		$this->reserves[$id] = new Channel();
 		return $id;
 	}
@@ -116,10 +133,9 @@ class RequestResponseBridge{
 	/**
 	 * Sends the parent response to a waiting child request.
 	 *
-	 * During the resolver call, $solvingRequestId is set so a completing menu race
-	 * can store the selected generator return value under the actual request ID.
-	 * $lastSolvedRequestId remains available after the resolver returns, because a
-	 * selected menu generator may suspend at finalize() before it returns.
+	 * For menu races, the selected request ID is recorded before the resolver runs.
+	 * This makes a synchronously completing child and a child that completes after
+	 * finalize() use the same explicit winner identity.
 	 *
 	 * @param int   $id    応答先ID
 	 * @param mixed $value 応答する値
@@ -132,13 +148,13 @@ class RequestResponseBridge{
 		$resolve = $this->pendingSend[$id];
 		unset($this->rejects[$id], $this->pendingSend[$id]);
 
-		$this->solvingRequestId = $id;
-		$this->lastSolvedRequestId = $id;
-		try{
-			$resolve($value);
-		}finally{
-			$this->solvingRequestId = null;
+		if($this->raceState === self::RACE_OPEN){
+			// Set the winner before resuming user code: resolve() can synchronously
+			// complete the generator and re-enter the race callback.
+			$this->raceState = self::RACE_SELECTED;
+			$this->selectedRequestId = $id;
 		}
+		$resolve($value);
 	}
 
 	/**
@@ -154,9 +170,7 @@ class RequestResponseBridge{
 	 * @param AwaitFormOptionsChildException $throwable The exception to pass to each waiting child.
 	 */
 	public function rejectsAll(AwaitFormOptionsChildException $throwable) : void{
-		foreach($this->rejects as $id => $reject){
-			$this->abort($id, $throwable);
-		}
+		$this->close($throwable);
 	}
 
 	/**
@@ -166,8 +180,44 @@ class RequestResponseBridge{
 	 * exceptions thrown by child code are still allowed to propagate.
 	 */
 	public function abortAll() : void{
-		foreach($this->rejects as $id => $reject){
-			$this->abort($id);
+		$this->close(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED));
+	}
+
+	/**
+	 * Closes the bridge and rejects every request that is still waiting.
+	 *
+	 * A closed menu race deliberately ignores completion callbacks from children
+	 * that catch the rejection and return normally. Every reject handler is
+	 * detached before invoking user code, so synchronous re-entry cannot reject a
+	 * request twice. All handlers are attempted even if one child crashes.
+	 *
+	 * @throws \Throwable The first non-child exception thrown while releasing children.
+	 */
+	public function close(AwaitFormOptionsChildException $throwable) : void{
+		if($this->disposed){
+			return;
+		}
+		$this->raceState = self::RACE_CLOSED;
+
+		$rejects = $this->rejects;
+		$this->rejects = [];
+		$this->pendingSend = [];
+		$firstException = null;
+		foreach($rejects as $reject){
+			try{
+				$reject($throwable);
+			}catch(AwaitException $exception){
+				$previous = $exception->getPrevious();
+				if(!$previous instanceof AwaitFormOptionsChildException){
+					$firstException ??= $previous ?? $exception;
+				}
+			}catch(AwaitFormOptionsChildException){
+			}catch(\Throwable $exception){
+				$firstException ??= $exception;
+			}
+		}
+		if($firstException !== null){
+			throw $firstException;
 		}
 	}
 
@@ -291,19 +341,29 @@ class RequestResponseBridge{
 	 * @see solve Refer to the `solve` method for additional context on related functionality.
 	 */
 	public function race(int $id, array $array) : void{
+		if($this->raceState !== self::RACE_INACTIVE){
+			throw new \LogicException("A menu race has already been started");
+		}
+		$this->raceState = self::RACE_OPEN;
+		$childId = 0;
 		foreach($array as $generator){
-			Await::g2c($generator, function($result) : void{
-				if($this->raceResolved){
+			$this->startingRaceChildId = $childId;
+			Await::g2c($generator, function($result) use ($childId) : void{
+				if($this->disposed || $this->raceState === self::RACE_CLOSED){
 					return;
 				}
-				$requestId = $this->solvingRequestId ?? $this->lastSolvedRequestId;
-				if($requestId === null){
+				if($this->raceState !== self::RACE_SELECTED || $this->selectedRequestId === null){
 					throw new \LogicException("Menu race completed without a solved request ID");
 				}
-				$this->raceResolved = true;
-				$this->returns[$requestId] = $result;
+				if(($this->raceChildByRequestId[$this->selectedRequestId] ?? null) !== $childId){
+					return;
+				}
+				$this->returns[$this->selectedRequestId] = $result;
+				$this->raceState = self::RACE_CLOSED;
 				$this->abortAll();
 			});
+			$this->startingRaceChildId = null;
+			$childId++;
 		}
 	}
 
@@ -366,22 +426,27 @@ class RequestResponseBridge{
 	 * If no finalization reservations have been scheduled, the method performs no actions.
 	 */
 	public function tryFinalize() : void{
-		krsort($this->finalizeList); // 高い優先度（数値が大きい）順に処理
-		foreach($this->finalizeList as $group){
+		$list = $this->finalizeList;
+		$this->finalizeList = [];
+		krsort($list); // 高い優先度（数値が大きい）順に処理
+		foreach($list as $group){
 			foreach($group as $item){
 				$item->sendWithoutWait(null);
 			}
 		}
-		unset($this->finalizeList);
 	}
 
 	/**
 	 * Releases all internal bridge state.
 	 *
-	 * This object is single-use after dispose(); accessing it again is intentionally
-	 * invalid because all coroutine coordination arrays have been unset.
+	 * This object is single-use after dispose(). Late menu-child completion
+	 * callbacks are ignored so they cannot access detached coordination state.
 	 */
 	public function dispose() : void{
-		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId, $this->solvingRequestId, $this->lastSolvedRequestId, $this->raceResolved);
+		if($this->disposed){
+			return;
+		}
+		$this->disposed = true;
+		unset($this->pendingRequest, $this->pendingSend, $this->rejects, $this->returns, $this->finalizeList, $this->reserves, $this->reservesId, $this->nextId, $this->raceState, $this->selectedRequestId, $this->startingRaceChildId, $this->raceChildByRequestId, $this->raceChildByReserveId);
 	}
 }

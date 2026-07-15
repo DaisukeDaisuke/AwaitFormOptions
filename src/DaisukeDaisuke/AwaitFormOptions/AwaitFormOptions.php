@@ -32,6 +32,33 @@ class AwaitFormOptions{
 	}
 
 	/**
+	 * Releases every child before detaching the bridge. Cleanup is deliberately
+	 * best-effort: one faulty userDispose() hook cannot strand the remaining
+	 * options or their child coroutines.
+	 *
+	 * @param list<FormOptions|MenuOptions> $options
+	 */
+	private static function cleanup(RequestResponseBridge $bridge, array $options) : void{
+		$firstException = null;
+		try{
+			$bridge->close(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED));
+		}catch(\Throwable $exception){
+			$firstException = $exception;
+		}
+		foreach($options as $option){
+			try{
+				$option->dispose();
+			}catch(\Throwable $exception){
+				$firstException ??= $exception;
+			}
+		}
+		$bridge->dispose();
+		if($firstException !== null){
+			throw $firstException;
+		}
+	}
+
+	/**
 	 * Starts sendFormAsync() as a standalone coroutine.
 	 *
 	 * Player rejection and parent-level form failures are swallowed. Developer
@@ -205,10 +232,7 @@ class AwaitFormOptions{
 				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
 		}finally{
-			foreach($needDispose as $item){
-				$item->dispose();
-			}
-			$bridge->dispose();
+			self::cleanup($bridge, $needDispose);
 			unset($bridge, $needDispose);
 		}
 		//This code path should be unreachable :(
@@ -390,10 +414,7 @@ class AwaitFormOptions{
 			// 該当しなかった場合はフォーム不正とみなす
 			throw new AwaitFormOptionsParentException("An invalid MenuElement selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 		}finally{
-			foreach($needDispose as $item){
-				$item->dispose();
-			}
-			$bridge->dispose();
+			self::cleanup($bridge, $needDispose);
 			unset($bridge, $needDispose, $buttons, $flatButtons, $flatOptions, $index, $keys, $returns);
 		}
 	}

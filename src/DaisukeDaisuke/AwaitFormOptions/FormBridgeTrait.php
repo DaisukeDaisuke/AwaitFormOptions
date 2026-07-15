@@ -21,20 +21,22 @@ trait FormBridgeTrait{
 	private bool $requested = false;
 	private ?int $reservesId = null;
 	private bool $disposed = false;
+	private bool $attached = false;
 
 	/**
 	 * Attaches the shared request/response bridge to this option instance.
 	 *
-	 * Option instances are single-use. Once dispose() has been called, setting a new
-	 * bridge would allow stale coroutine state to be reused, so it is rejected early.
+	 * Option instances are single-use. Attaching the same instance while it is
+	 * already active would overwrite its bridge and corrupt both parent coroutines.
 	 *
 	 * @internal
 	 * @throws AwaitFormOptionsInvalidValueException
 	 */
 	final public function setBridge(RequestResponseBridge $bridge) : void{
-		if($this->isDisposed()){
+		if($this->isDisposed() || $this->attached){
 			throw new AwaitFormOptionsInvalidValueException("Option reuse detected, class: " . static::class);
 		}
+		$this->attached = true;
 		$this->bridge = $bridge;
 	}
 
@@ -45,9 +47,16 @@ trait FormBridgeTrait{
 	 * @internal
 	 */
 	final public function dispose() : void{
+		if($this->isDisposed()){
+			return;
+		}
+
 		$this->setDisposed(true);
-		unset($this->bridge, $this->reservesId);
-		$this->userDispose();
+		try{
+			$this->userDispose();
+		}finally{
+			unset($this->bridge, $this->reservesId);
+		}
 	}
 
 	/**
