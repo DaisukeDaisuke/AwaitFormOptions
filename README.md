@@ -5,6 +5,21 @@
 An option-driven form handler framework built on AwaitForm for `pmmp` plugins.  
 Designed to modularize complex user interactions and support clean, reusable, async code.  
 
+## Final API Contract
+
+- This document describes the final, archived 4.x implementation.
+- Each `FormOptions` or `MenuOptions` instance is single-use.
+- Each child generator returned by `getOptions()` must eventually call `request()` exactly once.
+- `getOptions()` may return an empty array.
+- A child that suspends before reaching `request()` must call `schedule()` before that suspension.
+- Only one level of same-kind nested options is supported.
+- `FormOptions` accepts only `FormControl` values.
+- `MenuOptions` accepts only `MenuElement` values.
+- `sendFormAsync()` collects all child-generator return values.
+- `sendMenuAsync()` returns only the selected child generator's return value.
+- `AwaitFormOptionsExpectedCrashException` represents developer misuse and should normally not be caught.
+- If this documentation conflicts with the final tagged source code or tests, the source code and tests are authoritative.
+
 
 ## Requirements
 
@@ -34,16 +49,25 @@ AwaitFormOptions is designed to simplify complex form workflows and improve deve
 
 ---
 
+> [!WARNING]
+> This project is archived and is no longer actively maintained.
+>
+> Development for PocketMine-MP has ended as of 2026.
+> This documentation describes the final 4.x implementation contained in this repository.
+> Compatibility with future versions of PocketMine-MP, AwaitForm, PHP, or await-generator is not guaranteed.
+> Issues and pull requests may not receive a response.
+
 > [!NOTE]
 > When using an older version, please refer to the README for that specific version  
-> This README also serves as the specification and documentation, and is continuously updated to reflect the latest version. It does not support older versions.   
+> This README serves as the specification and documentation for the final repository state. It is frozen and does not document older versions.
 > To view documentation for older versions, please refer to the corresponding tags.   
 >   
 > Support Status  
-> 1.x series: End of life, There is a significant memory leak  
-> 2.x series: End of life,
-> 3.x series: Archived and issues are supported  
-> 4.x series: In development  
+> 1.x: End of life; contains a significant memory leak
+> 2.x: End of life
+> 3.x: End of life
+> 4.x: series: In development
+> 5.x: Final archived series. no active maintenance
 
 
 ## Why?
@@ -1179,7 +1203,7 @@ While improvements may be considered in the future, this area is not a developme
 
 ## ❓How about PMServerUI?
 PMServerUI (https://github.com/DavyCraft648/PMServerUI) is a great library for beginners who want to create simple and clean UI menus with minimal effort. Its straightforward API makes it easy to build forms quickly.  
-However, AwaitFormOptions provides a more powerful and flexible system that supports deeply nested options, persistent context between form steps, and asynchronous flow control.  
+However, AwaitFormOptions provides a more powerful and flexible system that supports composable option groups with one level of nesting, object-held context during a single form or menu execution, and asynchronous flow control.  
 While it is technically possible to recreate something like PMServerUI using AwaitFormOptions, the reverse is not true. PMServerUI cannot handle advanced patterns such as dynamic generator-based form logic, branching flows, or contextual state within multi-step UIs.  
 
 ## ❓Why isn't `Dialog` supported by `AwaitFormOptions`?
