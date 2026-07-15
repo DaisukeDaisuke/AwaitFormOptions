@@ -7,7 +7,7 @@ Designed to modularize complex user interactions and support clean, reusable, as
 
 ## Final API Contract
 
-- This document describes the final, archived 4.x implementation.
+- This document describes the final, archived 5.x implementation.
 - Each `FormOptions` or `MenuOptions` instance is single-use.
 - Each child generator returned by `getOptions()` must eventually call `request()` exactly once.
 - `getOptions()` may return an empty array.
@@ -53,7 +53,7 @@ AwaitFormOptions is designed to simplify complex form workflows and improve deve
 > This project is archived and is no longer actively maintained.
 >
 > Development for PocketMine-MP has ended as of 2026.
-> This documentation describes the final 4.x implementation contained in this repository.
+> This documentation describes the final 5.x implementation contained in this repository.
 > Compatibility with future versions of PocketMine-MP, AwaitForm, PHP, or await-generator is not guaranteed.
 > Issues and pull requests may not receive a response.
 
@@ -61,13 +61,13 @@ AwaitFormOptions is designed to simplify complex form workflows and improve deve
 > When using an older version, please refer to the README for that specific version  
 > This README serves as the specification and documentation for the final repository state. It is frozen and does not document older versions.
 > To view documentation for older versions, please refer to the corresponding tags.   
->   
-> Support Status  
-> 1.x: End of life; contains a significant memory leak
-> 2.x: End of life
-> 3.x: End of life
-> 4.x: series: In development
-> 5.x: Final archived series. no active maintenance
+>     
+> Support Status    
+> 1.x: End of life; contains a significant memory leak  
+> 2.x: End of life  
+> 3.x: End of life  
+> 4.x: series: In development  
+> 5.x: Final archived series. no active maintenance  
 
 
 ## Why?
