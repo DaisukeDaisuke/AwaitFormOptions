@@ -7,7 +7,7 @@ namespace DaisukeDaisuke\AwaitFormOptions\exception;
 /**
  * An exception that signals that the values sent in the request are invalid
  *
- * @see FormBridgeTrait::request()
+ * @see \DaisukeDaisuke\AwaitFormOptions\FormBridgeTrait::request()
  */
 final class AwaitFormOptionsInvalidValueException extends AwaitFormOptionsExpectedCrashException{
 

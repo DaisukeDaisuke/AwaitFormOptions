@@ -32,8 +32,41 @@ class AwaitFormOptions{
 	}
 
 	/**
-	 * @param array<FormOptions> $options
-	 * @throws \Throwable
+	 * Releases every child before detaching the bridge. Cleanup is deliberately
+	 * best-effort: one faulty userDispose() hook cannot strand the remaining
+	 * options or their child coroutines.
+	 *
+	 * @param list<FormOptions|MenuOptions> $options
+	 */
+	private static function cleanup(RequestResponseBridge $bridge, array $options) : void{
+		$firstException = null;
+		try{
+			$bridge->close(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED));
+		}catch(\Throwable $exception){
+			$firstException = $exception;
+		}
+		foreach($options as $option){
+			try{
+				$option->dispose();
+			}catch(\Throwable $exception){
+				$firstException ??= $exception;
+			}
+		}
+		$bridge->dispose();
+		if($firstException !== null){
+			throw $firstException;
+		}
+	}
+
+	/**
+	 * Starts sendFormAsync() as a standalone coroutine.
+	 *
+	 * Player rejection and parent-level form failures are swallowed. Developer
+	 * errors, including invalid option types and invalid request payloads, are not
+	 * swallowed.
+	 *
+	 * @param array<int|string, FormOptions> $options
+	 * @throws AwaitFormOptionsExpectedCrashException
 	 */
 	public static function sendForm(Player $player, string $title, array $options) : void{
 		Await::f2c(function() use ($options, $title, $player){
@@ -81,8 +114,9 @@ class AwaitFormOptions{
 	 * Developer mistakes such as invalid option types or invalid request values
 	 * are reported as AwaitFormOptionsExpectedCrashException subclasses.
 	 *
-	 * @param array<FormOptions> $options Awaitable form option providers
-	 * @throws FormValidationException|AwaitFormOptionsParentException|AwaitFormOptionsInvalidValueException I don't write \throwable because it's enough to piss off phpstan :<
+	 * @param array<int|string, FormOptions> $options Awaitable form option providers
+	 * @return \Generator<mixed, mixed, mixed, array<int|string, array<int|string, mixed>>>
+	 * @throws AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException
 	 */
 	public static function sendFormAsync(Player $player, string $title, array $options) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -105,7 +139,7 @@ class AwaitFormOptions{
 					Utils::validateArrayValueType($forms, static function(\Generator|FormOptions $value) : void{
 					});
 				}catch(\TypeError){
-					throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendFromAsync()");
+					throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions() must return an array of \Generator or nested FormOptions, see also AwaitFormOptions::sendFormAsync()");
 				}
 
 				foreach($forms as $key1 => $item){
@@ -160,8 +194,9 @@ class AwaitFormOptions{
 					/** @phpstan-ignore function.impossibleType */
 					if(!is_scalar($key) || is_object($key)){
 						//HACK: Making backtraces useful
-						$bridge->reject($id, new AwaitFormOptionsExpectedCrashException("key must be scalar, see also AwaitFormOptions::sendFormAsync()"));
-						return [];
+						$exception = new AwaitFormOptionsExpectedCrashException("key must be scalar, see also AwaitFormOptions::sendFormAsync()");
+						$bridge->reject($id, $exception);
+						throw $exception;
 					}
 					$keys[] = $key;
 					$options[] = $item;
@@ -197,18 +232,21 @@ class AwaitFormOptions{
 				throw new AwaitFormOptionsExpectedCrashException("Unhandled AwaitFormOptionsChildException", $exception->getCode(), $exception);
 			}
 		}finally{
-			foreach($needDispose as $item){
-				$item->dispose();
-			}
-			$bridge->dispose();
+			self::cleanup($bridge, $needDispose);
 			unset($bridge, $needDispose);
 		}
 		//This code path should be unreachable :(
 	}
 
 	/**
-	 * @param array<MenuOptions> $buttons
-	 * @throws \Throwable
+	 * Starts sendMenuAsync() as a standalone coroutine.
+	 *
+	 * Player rejection and parent-level form failures are swallowed. Developer
+	 * errors, including invalid option types and invalid request payloads, are not
+	 * swallowed.
+	 *
+	 * @param array<int|string, MenuOptions> $buttons
+	 * @throws AwaitFormOptionsExpectedCrashException
 	 */
 	public static function sendMenu(Player $player, string $title, string $content, array $buttons) : void{
 		Await::f2c(function() use ($content, $buttons, $title, $player){
@@ -252,9 +290,9 @@ class AwaitFormOptions{
 	 * Developer mistakes such as invalid option types or invalid request values
 	 * are reported as AwaitFormOptionsExpectedCrashException subclasses.
 	 *
-	 * @param array<MenuOptions> $buttons Awaitable menu option providers
-	 * @return \Generator<mixed>
-	 * @throws FormValidationException|AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException I don't write \throwable because it's enough to piss off phpstan :<
+	 * @param array<int|string, MenuOptions> $buttons Awaitable menu option providers
+	 * @return \Generator<mixed, mixed, mixed, mixed>
+	 * @throws AwaitFormOptionsExpectedCrashException|AwaitFormOptionsParentException
 	 */
 	public static function sendMenuAsync(Player $player, string $title, string $content, array $buttons) : \Generator{
 		$bridge = new RequestResponseBridge();
@@ -279,7 +317,7 @@ class AwaitFormOptions{
 					Utils::validateArrayValueType($array, static function(\Generator|MenuOptions $value) : void{
 					});
 				}catch(\TypeError){
-					throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions() must return an array(list) of \Generator, see also AwaitFormOptions::sendMenuAsync()");
+					throw new AwaitFormOptionsInvalidValueException($option::class . "::getOptions() must return an array of \Generator or nested MenuOptions, see also AwaitFormOptions::sendMenuAsync()");
 				}
 
 				foreach($array as $key2 => $item){
@@ -309,7 +347,7 @@ class AwaitFormOptions{
 			// 各 MenuOptions に紐づくボタン群を構築
 			$counter = 0;
 			$index = []; // id => [start, end, keys]
-			$flatButtons = []; // 表示用に flatten された Button[]
+			$flatButtons = []; // 表示用に flatten された MenuElement[]
 
 			foreach(yield from $bridge->getAllExpected() as $id => $array){
 				$keys = [];
@@ -320,9 +358,9 @@ class AwaitFormOptions{
 						if(!(array_is_list($item) && count($item) === 2)){
 							if(array_is_list($item) && count($item) !== 2){
 								$exception = new AwaitFormOptionsExpectedCrashException(
-									"The request value must be a 2-element list array [Button, key], but an array with " . count($item) . " element(s) was given. \n" .
+									"The request value must be a 2-element list array [MenuElement, key], but an array with " . count($item) . " element(s) was given. \n" .
 									" (key: " . $key . "). " .
-									"Ensure that your form returns an array like [Button, SelectedKey]. " .
+									"Ensure that your menu returns an array like [MenuElement, SelectedValue]. " .
 									"See also: AwaitFormOptions::sendMenuAsync()"
 								);
 								$bridge->reject($id, $exception);
@@ -376,10 +414,7 @@ class AwaitFormOptions{
 			// 該当しなかった場合はフォーム不正とみなす
 			throw new AwaitFormOptionsParentException("An invalid MenuElement selection was made", AwaitFormOptionsParentException::ERR_VERIFICATION_FAILED);
 		}finally{
-			foreach($needDispose as $item){
-				$item->dispose();
-			}
-			$bridge->dispose();
+			self::cleanup($bridge, $needDispose);
 			unset($bridge, $needDispose, $buttons, $flatButtons, $flatOptions, $index, $keys, $returns);
 		}
 	}

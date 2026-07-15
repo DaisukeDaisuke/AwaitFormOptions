@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace DaisukeDaisuke\AwaitFormOptions\exception;
 
-
-abstract class AwaitFormOptionsException extends \RuntimeException{
-
-}
+require_once __DIR__ . "/AwaitFormOptionsException.php";
 
 /**
- * @deprecated
+ * @deprecated Use AwaitFormOptionsException instead.
  */
 abstract class AwaitFormOptionsExcption extends AwaitFormOptionsException{
 

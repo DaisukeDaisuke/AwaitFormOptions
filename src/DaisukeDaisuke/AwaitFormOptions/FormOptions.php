@@ -8,7 +8,7 @@ abstract class FormOptions{
 	use FormBridgeTrait;
 
 	/**
-	 * @return array<\Generator>|array<FormOptions>
+	 * @return array<int|string, \Generator|FormOptions>
 	 */
 	abstract public function getOptions() : array;
 }

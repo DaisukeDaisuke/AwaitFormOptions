@@ -5,6 +5,22 @@
 An option-driven form handler framework built on AwaitForm for `pmmp` plugins.  
 Designed to modularize complex user interactions and support clean, reusable, async code.  
 
+## Final API Contract
+
+- This document describes the final, archived 5.x implementation.
+- Each `FormOptions` or `MenuOptions` instance is single-use.
+- Each child generator returned by `getOptions()` must eventually call `request()` exactly once.
+- `getOptions()` may return an empty array.
+- A child that suspends before reaching `request()` must call `schedule()` before that suspension.
+- Only one level of same-kind nested options is supported.
+- `FormOptions` accepts only `FormControl` values.
+- `MenuOptions` accepts only `MenuElement` values.
+- `sendFormAsync()` collects all child-generator return values.
+- `sendMenuAsync()` returns only the selected child generator's return value.
+- After a menu child request is solved, it must complete synchronously or wait only once on `finalize()`; `sendMenuAsync()` does not await arbitrary later asynchronous work.
+- `AwaitFormOptionsExpectedCrashException` represents developer misuse and should normally not be caught.
+- If this documentation conflicts with the final tagged source code or tests, the source code and tests are authoritative.
+
 
 ## Requirements
 
@@ -34,16 +50,25 @@ AwaitFormOptions is designed to simplify complex form workflows and improve deve
 
 ---
 
+> [!WARNING]
+> This project is archived and is no longer actively maintained.
+>
+> Development for PocketMine-MP has ended as of 2026.
+> This documentation describes the final 5.x implementation contained in this repository.
+> Compatibility with future versions of PocketMine-MP, AwaitForm, PHP, or await-generator is not guaranteed.
+> Issues and pull requests may not receive a response.
+
 > [!NOTE]
 > When using an older version, please refer to the README for that specific version  
-> This README also serves as the specification and documentation, and is continuously updated to reflect the latest version. It does not support older versions.   
+> This README serves as the specification and documentation for the final repository state. It is frozen and does not document older versions.
 > To view documentation for older versions, please refer to the corresponding tags.   
->   
-> Support Status  
-> 1.x series: End of life, There is a significant memory leak  
-> 2.x series: End of life,
-> 3.x series: Archived and issues are supported  
-> 4.x series: In development  
+>     
+> Support Status    
+> 1.x: End of life; contains a significant memory leak  
+> 2.x: End of life  
+> 3.x: End of life  
+> 4.x: series: In development  
+> 5.x: Final archived series. no active maintenance  
 
 
 ## Why?
@@ -129,7 +154,7 @@ Each option will yield from `$this->request($form);` and wait for the response. 
 >
 > Additionally, the following exceptions may be thrown from `request()`:
 > - `AwaitFormOptionsExpectedCrashException`: When `request()` is called more than once in the same generator.
-> - `AwaitFormOptionsExpectedCrashException`: When the provided form/button array is invalid.
+> - `AwaitFormOptionsExpectedCrashException`: When the provided payload is invalid, such as a `MenuElement` in a form request, a `FormControl` in a menu request, or an invalid tuple shape.
 > - `AwaitFormOptionsChildException`: If the player rejects the form, input is invalid, or the player logs out.
 >
 > The try-catch in the child generator may be omitted, but is not recommended.
@@ -196,8 +221,8 @@ class HPFormOptions extends FormOptions{
 
 ## Reusability
 
-Yes, option classes are reusable!   
-Try passing the same class multiple times:  
+Yes, option classes are reusable by creating separate instances.   
+Try passing multiple instances of the same class:  
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
@@ -249,6 +274,24 @@ public function a(PlayerItemUseEvent $event): void {
     );
 }
 ```
+
+---
+
+## Request Payload Shapes
+
+Inside a child generator, `request()` registers the form controls or menu elements contributed by that generator.
+
+For forms:
+- Use `FormControl` values, or `[FormControl, key]` tuples.
+- A bare `FormControl` uses the request array key as the response key.
+- An explicit form key must be scalar. Object, array, and `null` keys are rejected because form responses are returned as PHP array keys.
+
+For menus:
+- Use `MenuElement` values, or `[MenuElement, value]` tuples.
+- A bare `MenuElement` uses the request array key as the value returned from `request()`.
+- An explicit menu value may be any value, including an object.
+
+`FormOptions` cannot request `MenuElement` values, and `MenuOptions` cannot request `FormControl` values. Invalid payloads are developer errors and throw `AwaitFormOptionsExpectedCrashException`.
 
 ---
 
@@ -354,9 +397,9 @@ class NameMenuOptions extends MenuOptions{
 
 ---
 
-## Reusing Menu Options
+## Using Multiple Menu Option Instances
 
-Just like form options, menu options can be reused as well:  
+Just like form options, menu option classes can be used repeatedly by creating separate instances:  
 
 ```php
 public function a(PlayerItemUseEvent $event): void {
@@ -386,7 +429,7 @@ public function a(PlayerItemUseEvent $event): void {
 ---
 
 ### 🧩 Menu Advanced Usage: Attaching Objects to Buttons
-Normally, MenuElement::button("label") returns a `MenuElement` that maps to a string value.
+Normally, a bare `MenuElement::button("label")` maps to the key of that entry in the request array. In a normal list, that key is a numeric index.
 But what if you want to associate a more complex object, like a Player, Entity, or CustomData // with each button?
 
 You can do this easily by passing `[MenuElement::button(...), $value]` into the menu array.
@@ -571,14 +614,15 @@ class SimpleButton extends MenuOptions{
 ```
 
 ### result
-Any of the following
+Any of the following:
 ```
 int(0)
 int(1)
 int(2)
 int(3)
-NULL
 ```
+
+If the menu fails or is closed, `sendMenuAsync()` throws `AwaitFormOptionsParentException` instead of returning a value.
 
 
 ---
@@ -661,6 +705,7 @@ namespace test\test;
 
 use DaisukeDaisuke\AwaitFormOptions\FormOptions;
 use cosmicpe\awaitform\FormControl;
+use DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsChildException;
 
 class SimpleInput extends FormOptions{
 	public function __construct(private string $text, private string $default, private string $placeholder, private int $id){
@@ -805,7 +850,7 @@ class MobKillerForm extends MenuOptions{
 
 ## Non-Cancellable Form (Forced Confirmation)
 Sometimes, you want to prevent players from skipping or cancelling a form unless they acknowledge a specific phrase or condition // such as typing "yes".
-With AwaitFormOptions, this can be done cleanly by combining input validation and throwExceptionInCaller: true.
+With AwaitFormOptions, this can be done cleanly by retrying from the parent coroutine when the player rejects the form, and by validating the returned input before leaving the loop.
 
 ### Usage
 
@@ -999,25 +1044,25 @@ class HpBasedFoodOptions extends MenuOptions{
 
 ```php
 FormControl::divider() // Adds a horizontal divider to visually separate form sections.
-FormControl::dropdown(string $label, array $options, ?string $default = null) // Select from a list of options, returns the selected value.
-FormControl::dropdownIndex(string $label, array $options, int $default = 0) // Select from a list of options, returns the selected index.
-FormControl::dropdownMap(string $label, array $options, array $mapping, mixed $default = null) // Select from a list of options, returns a mapped value.
+FormControl::dropdown(string $label, array $options, ?string $default = null, ?string $tooltip = null) // Select from a list of options, returns the selected value.
+FormControl::dropdownIndex(string $label, array $options, int $default = 0, ?string $tooltip = null) // Select from a list of options, returns the selected index.
+FormControl::dropdownMap(string $label, array $options, array $mapping, mixed $default = null, ?string $tooltip = null) // Select from a list of options, returns a mapped value.
 FormControl::header(string $label) // Adds a bold header text to highlight sections.
-FormControl::input(string $label, string $placeholder = "", string $default = "") // Text input field. Returns user input as a string.
+FormControl::input(string $label, string $placeholder = "", string $default = "", ?string $tooltip = null) // Text input field. Returns user input as a string.
 FormControl::label(string $label) // Static text label, for descriptions or instructions.
-FormControl::slider(string $label, float $min, float $max, float $step = 0.0, float $default = 0.0) // A numeric slider. Returns a float value.
-FormControl::stepSlider(string $label, array $steps, ?string $default = null) // A discrete slider with string options. Returns a selected step.
-FormControl::toggle(string $label, bool $default = false) // A boolean toggle (checkbox). Returns true/false.
+FormControl::slider(string $label, float $min, float $max, float $step = 0.0, float $default = 0.0, ?string $tooltip = null) // A numeric slider. Returns a float value.
+FormControl::stepSlider(string $label, array $steps, ?string $default = null, ?string $tooltip = null) // A discrete slider with string options. Returns a selected step.
+FormControl::toggle(string $label, bool $default = false, ?string $tooltip = null) // A boolean toggle (checkbox). Returns true/false.
 ```
 
 ### Menu Available elements
 ```php
 MenuElement::button(string $text) // One user selectable button with text
-MenuElement::buttonWithImagePath(string $text) // Please specify the path within the resource pack
-MenuElement::buttonWithImageUrl(string $text) // This is obtained by the client, but there is a bug.
-MenuElement::divider(string $text) // Adds a horizontal divider to visually separate form sections.
-MenuElement::header(string $text) //  Adds a bold header text to highlight sections.
-MenuElement::label(string $text) //  Static text label, for descriptions or instructions.
+MenuElement::buttonWithImagePath(string $text, string $path) // Please specify the path within the resource pack
+MenuElement::buttonWithImageUrl(string $text, string $url) // This is obtained by the client, but there is a bug.
+MenuElement::divider() // Adds a horizontal divider to visually separate menu sections.
+MenuElement::header(string $label) // Adds a bold header text to highlight sections.
+MenuElement::label(string $label) // Static text label, for descriptions or instructions.
 ```
 
 ## ⚠️ Notes on `getOptions()`
@@ -1117,6 +1162,8 @@ public function getOptions(): array {
 }
 ```
 
+An empty `getOptions()` contributes no controls or menu elements. For menus, make sure the final assembled menu still contains at least one interactable `MenuElement` if you expect `sendMenuAsync()` to return normally.
+
 ---
 
 ## ⚠️ What to be aware of if you don't call request first in your generator
@@ -1157,7 +1204,7 @@ While improvements may be considered in the future, this area is not a developme
 
 ## ❓How about PMServerUI?
 PMServerUI (https://github.com/DavyCraft648/PMServerUI) is a great library for beginners who want to create simple and clean UI menus with minimal effort. Its straightforward API makes it easy to build forms quickly.  
-However, AwaitFormOptions provides a more powerful and flexible system that supports deeply nested options, persistent context between form steps, and asynchronous flow control.  
+However, AwaitFormOptions provides a more powerful and flexible system that supports composable option groups with one level of nesting, object-held context during a single form or menu execution, and asynchronous flow control.  
 While it is technically possible to recreate something like PMServerUI using AwaitFormOptions, the reverse is not true. PMServerUI cannot handle advanced patterns such as dynamic generator-based form logic, branching flows, or contextual state within multi-step UIs.  
 
 ## ❓Why isn't `Dialog` supported by `AwaitFormOptions`?
@@ -1736,7 +1783,7 @@ Coroutine suspension provided by AwaitGenerator keeps this object graph alive un
 
 As a result, object lifetime is primarily determined by coroutine lifetime rather than by traditional object ownership patterns.
 
-# 1.1.0 Futures
+# 1.1.0 Features
 ## Nested Options
 
 What should I do if I'm using object-oriented design, and I want to add elements but can't access the parent class?
@@ -1890,7 +1937,7 @@ class ConfirmInputForm extends FormOptions{
 }
 ```
 
-## 1.3.0 Future
+## 1.3.0 Feature
 ### schedule
 Want to use some await before sending a request? Now you can with schedule() in 1.3.0!  
 
@@ -1927,7 +1974,7 @@ class HpBasedFoodOptions extends MenuOptions{
 }
 ```
 
-## 2.0.0 Future
+## 2.0.0 Features
 ### A new abstract has been added: userDispose
 Each option must implement userDispose to handle garbage collection  
 ```php
@@ -1939,7 +1986,7 @@ protected function userDispose() : void{
 ### Memory leak fixed
 Fixed gc leak (memory leak) when form is abandoned　　
 
-## 3.0.0 Future 📌
+## 3.0.0 Features 📌
 
 * ➕ **AwaitFormOptionsParentException** has been added.
   This exception receives all non-fatal exceptions that occur during normal execution and may propagate to the parent coroutine.
@@ -2012,8 +2059,8 @@ Fixed gc leak (memory leak) when form is abandoned　　
 
 * ❌ The `neverRejects` parameter of the standalone functions `sendMenu` and `sendForm` has been removed for the same reasons described above.
 
-# 4.0.0 Future
-- dump AwaitForm 1.0.0
+# 4.0.0 Features
+- Bumped AwaitForm to 1.0.0
 - The button class has been replaced by \cosmicpe\awaitform\MenuElement
 - The number of elements available in MenuElement has increased
 - phpdoc has been added for some APIs
@@ -2033,4 +2080,51 @@ Fixed gc leak (memory leak) when form is abandoned　　
   Invalid request tuples now stop as `AwaitFormOptionsExpectedCrashException` instead of continuing through parent-side assembly.
 - 🔤 Added the correctly spelled `AwaitFormOptionsException` base class while keeping the existing `AwaitFormOptionsExcption` typo for compatibility.
 - 🧪 Added PHPUnit coverage for request collection, menu race ID mapping, return storage, finalizer priority, rejection, abort, and invalid solve handling.
-- phpdoc has been improved with GPT 5.5
+- phpdoc has been improved.
+
+# 5.0.0 Changelog
+- 🐛 Fixed menu race return-value mapping when the selected generator resumes after `finalize()`.
+  The selected request ID is now retained until the selected generator has returned.
+- 🛡️ Form request keys now always fail as `AwaitFormOptionsExpectedCrashException` when they are not scalar.
+  This prevents invalid form keys from being converted into an empty successful result.
+- 🔤 Added a correctly named `AwaitFormOptionsException.php` source file while preserving the deprecated `AwaitFormOptionsExcption` class for compatibility.
+- 🧩 Clarified `request()` payload shapes in the README.
+  Form requests use `FormControl` values or `[FormControl, scalar-key]`; menu requests use `MenuElement` values or `[MenuElement, mixed-value]`.
+- 📝 Updated README examples and API notes for separate option instances, menu return values, removed `throwExceptionInCaller`, empty menu contributions, and AwaitForm 1.0.0 element signatures.
+- 🧪 Added PHPUnit coverage for selected menu generators that return only after `finalize()`.
+- Improved phpdoc for option arrays, generator return types, bridge payloads, and exception references without requiring callers to catch `\Throwable`.
+
+
+## 5.1.0
+
+### Fixed
+
+- Fixed menu race result attribution so that only the child generator owning the selected request can provide the return value.
+- Fixed cancelled menu children being able to complete normally and interfere with the selected race result.
+- Fixed late menu-child completion callbacks accessing bridge state after the parent operation had already closed or disposed it.
+- Fixed a re-entrancy issue where pending request rejectors could be invoked more than once during synchronous coroutine completion.
+- Fixed `finalize()` registrations created while finalization was already in progress being discarded.
+- Fixed concurrent reuse of the same `FormOptions` or `MenuOptions` instance overwriting its active request bridge.
+
+### Changed
+
+- Added an explicit lifecycle state machine for menu races: inactive, open, selected, and closed.
+- Menu request IDs are now associated with their owning race child, including requests registered after `schedule()`.
+- Bridge cleanup now rejects all remaining child requests before detaching internal state.
+- Cleanup is now best-effort: all option instances are disposed even if one `userDispose()` implementation throws.
+- `dispose()` is now idempotent for both option instances and the request-response bridge.
+- Cleanup rethrows the first unexpected exception after all remaining resources have been released.
+- `rejectsAll()` and `abortAll()` now use the shared bridge-closing path.
+
+### Documentation
+
+- Documented that a selected menu child must complete synchronously after `request()` resumes, or suspend only once through `finalize()`.
+- Clarified that `sendMenuAsync()` does not wait for arbitrary asynchronous work started after the selected request has been solved.
+- Added final API contract details covering single-use option instances, nesting limits, request payload types, and return-value behavior.
+
+### Tests
+
+- Added coverage for menu children that catch cancellation and return normally.
+- Added coverage for late selected-child completion after bridge closure and disposal.
+- Added coverage preventing one option instance from being attached to multiple bridges.
+- Added coverage ensuring `finalize()` registrations made during finalization are preserved for the next finalization pass.

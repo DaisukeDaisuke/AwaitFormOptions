@@ -21,20 +21,22 @@ trait FormBridgeTrait{
 	private bool $requested = false;
 	private ?int $reservesId = null;
 	private bool $disposed = false;
+	private bool $attached = false;
 
 	/**
 	 * Attaches the shared request/response bridge to this option instance.
 	 *
-	 * Option instances are single-use. Once dispose() has been called, setting a new
-	 * bridge would allow stale coroutine state to be reused, so it is rejected early.
+	 * Option instances are single-use. Attaching the same instance while it is
+	 * already active would overwrite its bridge and corrupt both parent coroutines.
 	 *
 	 * @internal
 	 * @throws AwaitFormOptionsInvalidValueException
 	 */
 	final public function setBridge(RequestResponseBridge $bridge) : void{
-		if($this->isDisposed()){
+		if($this->isDisposed() || $this->attached){
 			throw new AwaitFormOptionsInvalidValueException("Option reuse detected, class: " . static::class);
 		}
+		$this->attached = true;
 		$this->bridge = $bridge;
 	}
 
@@ -45,9 +47,16 @@ trait FormBridgeTrait{
 	 * @internal
 	 */
 	final public function dispose() : void{
+		if($this->isDisposed()){
+			return;
+		}
+
 		$this->setDisposed(true);
-		unset($this->bridge, $this->reservesId);
-		$this->userDispose();
+		try{
+			$this->userDispose();
+		}finally{
+			unset($this->bridge, $this->reservesId);
+		}
 	}
 
 	/**
@@ -63,7 +72,7 @@ trait FormBridgeTrait{
 	 *
 	 * Higher priority values are resumed first when the parent calls tryFinalize().
 	 *
-	 * @return \Generator<mixed>
+	 * @return \Generator<mixed, mixed, mixed, void>
 	 */
 	final protected function finalize(int $priority = 0) : \Generator{
 		yield from $this->bridge->finalize($priority);
@@ -94,8 +103,8 @@ trait FormBridgeTrait{
 	 * treated as an expected crash because the parent request accounting would no
 	 * longer be reliable.
 	 *
-	 * @param array{FormControl|MenuElement, mixed}|array<FormControl|MenuElement|list<FormControl|MenuElement>|list<array{FormControl|MenuElement, mixed}>> $value
-	 * @return \Generator<mixed>
+	 * @param array{FormControl|MenuElement, mixed}|array<int|string, FormControl|MenuElement|array{FormControl|MenuElement, mixed}> $value
+	 * @return \Generator<mixed, mixed, mixed, mixed>
 	 * @throws AwaitFormOptionsChildException|AwaitFormOptionsExpectedCrashException
 	 */
 	final protected function request(array $value) : \Generator{

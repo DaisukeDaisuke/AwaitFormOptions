@@ -70,6 +70,104 @@ final class RequestResponseBridgeTest extends TestCase{
 		self::assertSame([1 => "late:selected"], $bridge->getReturns());
 	}
 
+	public function testMenuRaceStoresReturnAfterSelectedGeneratorFinalizes() : void{
+		$bridge = new RequestResponseBridge();
+
+		$selected = (function() use ($bridge) : Generator{
+			yield from $bridge->request([MenuElement::button("selected")]);
+			yield from $bridge->finalize();
+			return "selected";
+		})();
+
+		$loser = (function() use ($bridge) : Generator{
+			try{
+				yield from $bridge->request([MenuElement::button("loser")]);
+				return "loser";
+			}catch(AwaitFormOptionsChildException){
+				return "loser-aborted";
+			}
+		})();
+
+		$bridge->race(0, [$selected, $loser]);
+
+		$requests = null;
+		Await::f2c(function() use ($bridge, &$requests) : Generator{
+			$requests = yield from $bridge->getAllExpected();
+		});
+
+		self::assertSame([0, 1], array_keys($requests));
+
+		$bridge->solve(0, "selected");
+
+		self::assertSame([], $bridge->getReturns());
+
+		$bridge->tryFinalize();
+
+		self::assertSame([0 => "selected"], $bridge->getReturns());
+	}
+
+	public function testMenuRaceIgnoresChildrenThatReturnAfterCancellation() : void{
+		$bridge = new RequestResponseBridge();
+
+		$child = static function() use ($bridge) : Generator{
+			try{
+				yield from $bridge->request([MenuElement::button("child")]);
+			}catch(AwaitFormOptionsChildException){
+				return "cancelled";
+			}
+			return "selected";
+		};
+
+		$bridge->race(0, [$child(), $child()]);
+		$bridge->rejectsAll(new AwaitFormOptionsChildException("", 12345));
+
+		self::assertSame([], $bridge->getReturns());
+	}
+
+	public function testLateSelectedChildCompletionIsIgnoredAfterCloseAndDispose() : void{
+		$bridge = new RequestResponseBridge();
+		$resume = null;
+
+		$child = static function() use ($bridge, &$resume) : Generator{
+			yield from $bridge->request([MenuElement::button("selected")]);
+			yield from Await::promise(static function(\Closure $resolve) use (&$resume) : void{
+				$resume = $resolve;
+			});
+			return "late";
+		};
+
+		$bridge->race(0, [$child()]);
+		$bridge->solve(0, "selected");
+		self::assertIsCallable($resume);
+
+		$bridge->close(new AwaitFormOptionsChildException("", AwaitFormOptionsChildException::ERR_COROUTINE_ABORTED));
+		$bridge->dispose();
+
+		$error = null;
+		try{
+			$resume(null);
+		}catch(\Throwable $exception){
+			$error = $exception;
+		}
+		self::assertNull($error);
+	}
+
+	public function testOptionCannotBeAttachedToTwoBridges() : void{
+		$option = new class extends \DaisukeDaisuke\AwaitFormOptions\MenuOptions{
+			public function getOptions() : array{
+				return [];
+			}
+
+			protected function userDispose() : void{
+			}
+		};
+
+		$option->setBridge(new RequestResponseBridge());
+
+		$this->expectException(\DaisukeDaisuke\AwaitFormOptions\exception\AwaitFormOptionsInvalidValueException::class);
+		$option->setBridge(new RequestResponseBridge());
+	}
+
 	public function testOneStoresGeneratorReturnUnderOwnerKey() : void{
 		$bridge = new RequestResponseBridge();
 
@@ -121,6 +219,24 @@ final class RequestResponseBridgeTest extends TestCase{
 		$bridge->tryFinalize();
 
 		self::assertSame(["high", "low"], $order);
+	}
+
+	public function testFinalizePreservesRegistrationsMadeDuringFinalization() : void{
+		$bridge = new RequestResponseBridge();
+		$order = [];
+
+		Await::g2c((function() use ($bridge, &$order) : Generator{
+			yield from $bridge->finalize();
+			$order[] = "first";
+			yield from $bridge->finalize();
+			$order[] = "second";
+		})());
+
+		$bridge->tryFinalize();
+		self::assertSame(["first"], $order);
+
+		$bridge->tryFinalize();
+		self::assertSame(["first", "second"], $order);
 	}
 
 	public function testRejectsAllPropagatesProvidedChildExceptionToWaitingRequests() : void{

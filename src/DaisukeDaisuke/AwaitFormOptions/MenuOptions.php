@@ -8,7 +8,7 @@ abstract class MenuOptions{
 	use FormBridgeTrait;
 
 	/**
-	 * @return array<\Generator>|array<MenuOptions>
+	 * @return array<int|string, \Generator|MenuOptions>
 	 */
 	abstract public function getOptions() : array;
 }
